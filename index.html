@@ -7,282 +7,374 @@
 <meta name="description" content="Aldi Lukito Diono — DevOps Engineer with a background as a Full Stack Java Developer for Distribution Management Systems.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f6f7f9;
+    --bg: #eef1f6;
     --surface: #ffffff;
-    --text: #1b1f24;
-    --muted: #5b6573;
-    --line: #e3e6eb;
-    --accent: #1f6feb;
-    --accent-soft: #e8f0fe;
-    --chip: #f1f3f6;
-    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --side: #f7f8fb;
+    --text: #1a2233;
+    --muted: #5d6779;
+    --line: #e2e6ee;
+    --navy: #0f1d3a;
+    --navy-2: #1d3263;
+    --gold: #c49a3a;
+    --gold-soft: #f6eedb;
+    --accent: #2457c5;
+    --accent-soft: #e7eefc;
+    /* skill category hues */
+    --c1: #2457c5; --c1-bg: #e7eefc;
+    --c2: #0f8a7e; --c2-bg: #e0f4f1;
+    --c3: #7a46c9; --c3-bg: #efe8fb;
+    --c4: #c0592b; --c4-bg: #fbeae2;
+    --c5: #3b4a63; --c5-bg: #e9edf3;
+    --serif: "Fraunces", Georgia, serif;
     --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    --shadow: 0 1px 2px rgba(15, 29, 58, .06), 0 12px 40px -12px rgba(15, 29, 58, .18);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0d1117;
-      --surface: #151b23;
-      --text: #e6edf3;
-      --muted: #9aa5b1;
-      --line: #2a313c;
-      --accent: #58a6ff;
-      --accent-soft: #14253d;
-      --chip: #1e2631;
+      --bg: #0a0f1c; --surface: #121a2b; --side: #0f1626; --text: #e7ebf3; --muted: #9aa4b8; --line: #243049;
+      --gold: #d9b45e; --gold-soft: #2e2715; --accent: #7ea6ff; --accent-soft: #1a2a4d;
+      --c1: #7ea6ff; --c1-bg: #1a2a4d; --c2: #4fd1c0; --c2-bg: #123632;
+      --c3: #b794f6; --c3-bg: #2a1f45; --c4: #f0a07a; --c4-bg: #3a2218; --c5: #b6c2d6; --c5-bg: #222c40;
+      --shadow: 0 12px 40px -12px rgba(0, 0, 0, .6);
     }
   }
   :root[data-theme="dark"] {
-    --bg: #0d1117;
-    --surface: #151b23;
-    --text: #e6edf3;
-    --muted: #9aa5b1;
-    --line: #2a313c;
-    --accent: #58a6ff;
-    --accent-soft: #14253d;
-    --chip: #1e2631;
+    --bg: #0a0f1c; --surface: #121a2b; --side: #0f1626; --text: #e7ebf3; --muted: #9aa4b8; --line: #243049;
+    --gold: #d9b45e; --gold-soft: #2e2715; --accent: #7ea6ff; --accent-soft: #1a2a4d;
+    --c1: #7ea6ff; --c1-bg: #1a2a4d; --c2: #4fd1c0; --c2-bg: #123632;
+    --c3: #b794f6; --c3-bg: #2a1f45; --c4: #f0a07a; --c4-bg: #3a2218; --c5: #b6c2d6; --c5-bg: #222c40;
+    --shadow: 0 12px 40px -12px rgba(0, 0, 0, .6);
   }
 
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font: 15px/1.6 var(--sans);
-  }
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { text-decoration: underline; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 var(--sans); }
+  a { color: inherit; }
 
-  .page {
-    max-width: 860px;
-    margin: 40px auto;
-    padding: 0 16px;
-  }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 40px 44px;
-  }
+  .page { max-width: 1040px; margin: 40px auto; padding: 0 16px; }
+  .card { background: var(--surface); border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); }
 
-  /* Header */
-  header { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
-  h1 { margin: 0; font-size: 32px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 700; }
-  .role { margin: 6px 0 0; font-size: 17px; color: var(--accent); font-weight: 600; }
-  .company { margin: 2px 0 0; color: var(--muted); }
-  .contact { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
-  .contact li { display: flex; gap: 8px; align-items: center; }
-  .contact .k { font-family: var(--mono); font-size: 12px; color: var(--muted); min-width: 52px; }
-
-  .actions { margin-top: 18px; display: flex; gap: 8px; flex-wrap: wrap; }
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    color: #fff;
+    padding: 44px 48px 40px;
+    background:
+      radial-gradient(900px 300px at 100% 0%, rgba(196, 154, 58, .28), transparent 60%),
+      radial-gradient(700px 320px at 0% 100%, rgba(36, 87, 197, .45), transparent 60%),
+      linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 100%);
+  }
+  .hero::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px;
+    background: linear-gradient(90deg, var(--gold), #e8cf8a 40%, var(--gold));
+  }
+  .hero-top { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
+  .mono {
+    flex: none; width: 96px; height: 96px; border-radius: 50%;
+    display: grid; place-items: center;
+    font: 600 34px var(--serif); letter-spacing: .02em; color: var(--navy);
+    background: linear-gradient(145deg, #f3e2b3, var(--gold));
+    box-shadow: 0 0 0 5px rgba(255, 255, 255, .12);
+  }
+  .hero h1 { margin: 0; font: 600 40px/1.1 var(--serif); letter-spacing: -.01em; }
+  .hero .role { margin: 8px 0 0; font-size: 18px; font-weight: 600; color: #f0d48f; }
+  .hero .company { margin: 2px 0 0; color: rgba(255, 255, 255, .72); font-size: 14.5px; }
+  .hero-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; align-self: flex-start; }
   .btn {
-    font: 500 13px var(--sans);
-    color: var(--text);
-    background: var(--chip);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 7px 12px;
-    cursor: pointer;
+    font: 500 13px var(--sans); color: #fff; cursor: pointer;
+    background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: 999px; padding: 8px 14px; backdrop-filter: blur(4px);
   }
-  .btn:hover { border-color: var(--accent); }
+  .btn:hover { background: rgba(255, 255, 255, .18); }
+  .btn.primary { background: var(--gold); border-color: var(--gold); color: var(--navy); font-weight: 600; }
+  .btn.primary:hover { filter: brightness(1.06); }
 
-  /* Sections */
-  section { margin-top: 34px; }
-  h2 {
-    margin: 0 0 14px;
-    font: 500 12px var(--mono);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
-    display: flex; align-items: center; gap: 12px;
+  .stats { margin-top: 30px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .stat {
+    background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 12px; padding: 12px 14px;
   }
-  h2::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .stat b { display: block; font: 600 24px/1.1 var(--serif); color: #fff; }
+  .stat span { font-size: 12.5px; color: rgba(255, 255, 255, .7); }
+
+  /* ---------- Body layout ---------- */
+  .body { display: grid; grid-template-columns: 300px 1fr; }
+  aside { background: var(--side); border-right: 1px solid var(--line); padding: 34px 28px; }
+  .main { padding: 34px 44px 40px; }
+
+  h2 {
+    margin: 0 0 16px; font: 600 13px var(--sans); letter-spacing: .14em; text-transform: uppercase;
+    color: var(--text); display: flex; align-items: center; gap: 10px;
+  }
+  h2::before { content: ""; width: 18px; height: 3px; border-radius: 2px; background: var(--gold); }
+  section + section { margin-top: 34px; }
   p { margin: 0; }
-  .summary { font-size: 15.5px; }
+
+  /* Contact */
+  .contact { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; font-size: 14px; }
+  .contact li { display: flex; gap: 12px; align-items: center; min-width: 0; }
+  .contact svg { flex: none; width: 32px; height: 32px; padding: 8px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); }
+  .contact a { text-decoration: none; overflow-wrap: anywhere; }
+  .contact a:hover { color: var(--accent); }
 
   /* Skills */
-  .skills { display: grid; grid-template-columns: 150px 1fr; gap: 10px 18px; align-items: start; }
-  .skills dt { font-weight: 600; font-size: 14px; padding-top: 3px; }
-  .skills dd { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip {
-    font: 500 12.5px var(--mono);
-    background: var(--chip);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: 3px 8px;
-  }
-  .chip.hl { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+  .skill-group + .skill-group { margin-top: 16px; }
+  .skill-group h3 { margin: 0 0 8px; font: 600 12.5px var(--sans); color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font: 500 12.5px var(--sans); border-radius: 999px; padding: 4px 11px; color: var(--c); background: var(--cb); }
+  .g1 { --c: var(--c1); --cb: var(--c1-bg); }
+  .g2 { --c: var(--c2); --cb: var(--c2-bg); }
+  .g3 { --c: var(--c3); --cb: var(--c3-bg); }
+  .g4 { --c: var(--c4); --cb: var(--c4-bg); }
+  .g5 { --c: var(--c5); --cb: var(--c5-bg); }
 
-  /* Experience */
-  .job { position: relative; padding-left: 22px; border-left: 2px solid var(--line); padding-bottom: 26px; }
+  /* Education */
+  .edu { display: grid; gap: 16px; }
+  .edu-item { border-left: 3px solid var(--line); padding-left: 12px; }
+  .edu-item b { display: block; font-size: 14px; line-height: 1.35; }
+  .edu-item span { display: block; font-size: 13px; color: var(--muted); }
+  .edu-item .yr { font: 500 12px var(--mono); color: var(--gold); margin-top: 2px; }
+
+  /* Profile */
+  .summary { font-size: 16px; line-height: 1.7; }
+  .summary strong { color: var(--accent); font-weight: 600; }
+
+  /* Timeline */
+  .timeline { position: relative; }
+  .job { position: relative; padding: 0 0 30px 30px; }
+  .job::before { content: ""; position: absolute; left: 7px; top: 22px; bottom: 0; width: 2px; background: var(--line); }
   .job:last-child { padding-bottom: 0; }
-  .job::before {
-    content: ""; position: absolute; left: -7px; top: 6px;
-    width: 12px; height: 12px; border-radius: 50%;
-    background: var(--surface); border: 2px solid var(--accent);
+  .job:last-child::before { display: none; }
+  .dot {
+    position: absolute; left: 0; top: 5px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--surface); border: 3px solid var(--accent);
   }
-  .job.past::before { border-color: var(--muted); }
-  .job-head { display: flex; justify-content: space-between; gap: 6px 16px; flex-wrap: wrap; }
-  .job h3 { margin: 0; font-size: 16.5px; font-weight: 600; }
-  .when { font: 500 12.5px var(--mono); color: var(--muted); white-space: nowrap; padding-top: 3px; }
-  .org { color: var(--muted); font-size: 14px; margin-top: 1px; }
+  .job.current .dot { border-color: var(--gold); box-shadow: 0 0 0 5px var(--gold-soft); }
+  .job.past .dot { border-color: var(--muted); }
+  .job-head { display: flex; justify-content: space-between; gap: 4px 16px; flex-wrap: wrap; align-items: baseline; }
+  .job h3 { margin: 0; font: 600 18px/1.3 var(--serif); }
+  .when {
+    font: 500 12px var(--mono); white-space: nowrap; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px; padding: 3px 10px;
+  }
+  .job.current .when { color: #8a6514; background: var(--gold-soft); }
+  :root[data-theme="dark"] .job.current .when { color: var(--gold); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .job.current .when { color: var(--gold); } }
+  .org { margin-top: 4px; color: var(--muted); font-size: 14px; font-weight: 500; }
   .badge {
-    display: inline-block; margin-top: 8px;
-    font: 500 12px var(--mono);
-    color: var(--accent); background: var(--accent-soft);
-    border-radius: 6px; padding: 2px 8px;
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
+    font: 600 12px var(--sans); color: var(--c2); background: var(--c2-bg); border-radius: 999px; padding: 4px 11px;
   }
-  .job ul { margin: 10px 0 0; padding-left: 18px; }
-  .job li { margin: 4px 0; }
-  .job li::marker { color: var(--muted); }
+  .badge::before { content: "★"; font-size: 11px; }
+  .job ul { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+  .job li { position: relative; padding-left: 18px; }
+  .job li::before {
+    content: ""; position: absolute; left: 2px; top: .62em; width: 6px; height: 6px;
+    border-radius: 2px; background: var(--gold); transform: rotate(45deg);
+  }
+  .job.past li::before { background: var(--muted); }
+  .tags { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .tags span { font: 500 11.5px var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 2px 7px; }
 
-  /* Compact lists */
-  .rows { display: grid; gap: 12px; }
-  .row { display: flex; justify-content: space-between; gap: 4px 16px; flex-wrap: wrap; }
-  .row b { font-weight: 600; }
-  .row .sub { color: var(--muted); font-size: 14px; }
+  footer { text-align: center; color: var(--muted); font-size: 12.5px; margin: 22px 0 40px; }
 
-  footer { text-align: center; color: var(--muted); font-size: 12.5px; margin: 20px 0 40px; }
-
-  @media (max-width: 640px) {
+  /* ---------- Responsive ---------- */
+  @media (max-width: 860px) {
+    .body { grid-template-columns: 1fr; }
+    aside { order: 2; border-right: 0; border-top: 1px solid var(--line); }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 560px) {
     .page { margin: 16px auto; }
-    .card { padding: 24px 18px; border-radius: 12px; }
-    h1 { font-size: 26px; }
-    .skills { grid-template-columns: 1fr; gap: 4px; }
-    .skills dd { margin-bottom: 10px; }
+    .hero { padding: 28px 20px 26px; }
+    .hero h1 { font-size: 30px; }
+    .mono { width: 72px; height: 72px; font-size: 26px; }
+    .hero-actions { margin-left: 0; }
+    aside, .main { padding: 26px 20px; }
   }
 
+  /* ---------- Print ---------- */
   @media print {
-    :root { --bg: #fff; --surface: #fff; --text: #000; --muted: #444; --line: #ccc; --accent: #0b4fb3; --accent-soft: #eef3fc; --chip: #f4f4f4; }
-    body { font-size: 12.5px; }
+    @page { margin: 12mm; }
+    body { background: #fff; font-size: 12px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .page { margin: 0; max-width: none; padding: 0; }
-    .card { border: 0; padding: 0; }
-    .actions, footer { display: none; }
-    section { margin-top: 20px; }
-    .job { break-inside: avoid; padding-bottom: 16px; }
-    a { color: inherit; }
+    .card { box-shadow: none; border-radius: 0; }
+    .hero-actions, footer { display: none; }
+    .hero { padding: 26px 28px; }
+    .body { grid-template-columns: 240px 1fr; }
+    aside, .main { padding: 22px; }
+    .job { break-inside: avoid; padding-bottom: 18px; }
   }
 </style>
 </head>
 <body>
 <main class="page">
   <article class="card">
-    <header>
-      <div>
-        <h1>Aldi Lukito Diono</h1>
-        <p class="role">DevOps Engineer</p>
-        <p class="company">Former Full Stack Java Developer · Distribution Management System</p>
-        <div class="actions">
-          <button class="btn" type="button" onclick="window.print()">Download PDF</button>
-          <button class="btn" type="button" id="theme">Toggle theme</button>
+    <header class="hero">
+      <div class="hero-top">
+        <div class="mono" aria-hidden="true">AL</div>
+        <div>
+          <h1>Aldi Lukito Diono</h1>
+          <p class="role">DevOps Engineer</p>
+          <p class="company">PT. Paramadaksa Teknologi Nusantara (NEXSOFT)</p>
+        </div>
+        <div class="hero-actions">
+          <button class="btn primary" type="button" onclick="window.print()">Download PDF</button>
+          <button class="btn" type="button" id="theme" aria-label="Toggle light or dark theme">◐ Theme</button>
         </div>
       </div>
-      <ul class="contact">
-        <li><span class="k">email</span><a href="mailto:aldiluki89@gmail.com">aldiluki89@gmail.com</a></li>
-        <li><span class="k">github</span><a href="https://github.com/aldiCovo">github.com/aldiCovo</a></li>
-        <li><span class="k">based</span>Indonesia</li>
-      </ul>
+      <div class="stats">
+        <div class="stat"><b>6+ yrs</b><span>Software engineering</span></div>
+        <div class="stat"><b>DMS</b><span>Distribution Management System</span></div>
+        <div class="stat"><b>2 yrs</b><span>Team Lead, ND6 Bug Team</span></div>
+        <div class="stat"><b>K8s</b><span>Docker · Kubernetes · CI/CD</span></div>
+      </div>
     </header>
 
-    <section>
-      <h2>Profile</h2>
-      <p class="summary">
-        DevOps Engineer at PT. Paramadaksa Teknologi Nusantara (NEXSOFT) with over six years of
-        software engineering experience. Spent 2019–2025 as a Full Stack Java Developer specializing in
-        Distribution Management Systems, including two years leading the ND6 bug team. Now focused on
-        containerized delivery with Docker and Kubernetes, CI/CD automation with Jenkins and Bitbucket
-        Pipelines, and running MySQL, PostgreSQL and MongoDB in production on BytePlus cloud.
-      </p>
-    </section>
+    <div class="body">
+      <aside>
+        <section>
+          <h2>Contact</h2>
+          <ul class="contact">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+              <a href="mailto:aldiluki89@gmail.com">aldiluki89@gmail.com</a>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+              <a href="https://github.com/aldiCovo">github.com/aldiCovo</a>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>Indonesia</span>
+            </li>
+          </ul>
+        </section>
 
-    <section>
-      <h2>Skills</h2>
-      <dl class="skills">
-        <dt>Containers</dt>
-        <dd><span class="chip hl">Docker</span><span class="chip hl">Kubernetes</span><span class="chip">NGINX Ingress</span></dd>
-        <dt>CI/CD</dt>
-        <dd><span class="chip hl">Jenkins</span><span class="chip hl">Bitbucket Pipelines</span><span class="chip">Git</span></dd>
-        <dt>Cloud &amp; OS</dt>
-        <dd><span class="chip">BytePlus</span><span class="chip">Linux</span></dd>
-        <dt>Databases</dt>
-        <dd><span class="chip">MySQL</span><span class="chip">PostgreSQL</span><span class="chip">MongoDB</span><span class="chip">Oracle</span></dd>
-        <dt>Development</dt>
-        <dd><span class="chip">Java</span><span class="chip">Spring Boot</span><span class="chip">JavaScript</span><span class="chip">React JS</span><span class="chip">PHP</span><span class="chip">SQL</span></dd>
-        <dt>Languages</dt>
-        <dd><span class="chip">Bahasa Indonesia</span><span class="chip">English</span></dd>
-      </dl>
-    </section>
+        <section>
+          <h2>Skills</h2>
+          <div class="skill-group">
+            <h3>Containers &amp; Orchestration</h3>
+            <div class="chips g1"><span class="chip">Docker</span><span class="chip">Kubernetes</span><span class="chip">NGINX Ingress</span></div>
+          </div>
+          <div class="skill-group">
+            <h3>CI/CD &amp; Version Control</h3>
+            <div class="chips g2"><span class="chip">Jenkins</span><span class="chip">Bitbucket Pipelines</span><span class="chip">Git</span></div>
+          </div>
+          <div class="skill-group">
+            <h3>Cloud &amp; OS</h3>
+            <div class="chips g3"><span class="chip">BytePlus</span><span class="chip">Linux</span></div>
+          </div>
+          <div class="skill-group">
+            <h3>Databases</h3>
+            <div class="chips g4"><span class="chip">MySQL</span><span class="chip">PostgreSQL</span><span class="chip">MongoDB</span><span class="chip">Oracle</span></div>
+          </div>
+          <div class="skill-group">
+            <h3>Development</h3>
+            <div class="chips g5"><span class="chip">Java</span><span class="chip">Spring Boot</span><span class="chip">JavaScript</span><span class="chip">React JS</span><span class="chip">PHP</span><span class="chip">SQL</span></div>
+          </div>
+          <div class="skill-group">
+            <h3>Languages</h3>
+            <div class="chips g5"><span class="chip">Bahasa Indonesia</span><span class="chip">English</span></div>
+          </div>
+        </section>
 
-    <section>
-      <h2>Experience</h2>
+        <section>
+          <h2>Education</h2>
+          <div class="edu">
+            <div class="edu-item">
+              <b>Purwadhika Digital Technology School</b>
+              <span>Mobile &amp; Web Developer program · Jakarta</span>
+              <span class="yr">2019</span>
+            </div>
+            <div class="edu-item">
+              <b>Institut Pertanian Stiper</b>
+              <span>Bachelor program · Yogyakarta</span>
+              <span class="yr">2010</span>
+            </div>
+            <div class="edu-item">
+              <b>Politeknik LPP</b>
+              <span>Associate degree, Telecommunications Engineering · Yogyakarta</span>
+              <span class="yr">2007</span>
+            </div>
+          </div>
+        </section>
+      </aside>
 
-      <div class="job">
-        <div class="job-head">
-          <h3>DevOps Engineer</h3>
-          <span class="when">Jan 2026 – Present</span>
-        </div>
-        <div class="org">PT. Paramadaksa Teknologi Nusantara (NEXSOFT)</div>
-        <ul>
-          <li>Build and maintain CI/CD pipelines with Jenkins and Bitbucket Pipelines to automate build, test and deployment to Docker and Kubernetes environments.</li>
-          <li>Build, package and deploy applications as containers using Docker.</li>
-          <li>Deploy, manage and scale workloads on Kubernetes clusters (deployments, services, config maps, rolling updates).</li>
-          <li>Configure NGINX Ingress Controller for routing, load balancing and TLS/SSL termination of application traffic.</li>
-          <li>Provision and manage cloud infrastructure on BytePlus, including compute instances, managed Kubernetes and networking.</li>
-          <li>Administer Linux servers and manage source code with Git, including branching strategy and merge workflows.</li>
-          <li>Administer MySQL, PostgreSQL and MongoDB databases, including installation, backup and restore, and performance tuning.</li>
-          <li>Monitor application and infrastructure health and troubleshoot production issues to keep systems stable and available.</li>
-        </ul>
+      <div class="main">
+        <section>
+          <h2>Profile</h2>
+          <p class="summary">
+            DevOps Engineer at <strong>NEXSOFT</strong> with over six years of software engineering experience.
+            Spent 2019–2025 as a <strong>Full Stack Java Developer</strong> specializing in Distribution Management
+            Systems, including two years leading the ND6 bug team. Now focused on containerized delivery with
+            <strong>Docker and Kubernetes</strong>, CI/CD automation with Jenkins and Bitbucket Pipelines, and running
+            MySQL, PostgreSQL and MongoDB in production on BytePlus cloud.
+          </p>
+        </section>
+
+        <section>
+          <h2>Experience</h2>
+          <div class="timeline">
+            <div class="job current">
+              <span class="dot"></span>
+              <div class="job-head">
+                <h3>DevOps Engineer</h3>
+                <span class="when">Jan 2026 – Present</span>
+              </div>
+              <div class="org">PT. Paramadaksa Teknologi Nusantara (NEXSOFT)</div>
+              <ul>
+                <li>Build and maintain CI/CD pipelines with Jenkins and Bitbucket Pipelines to automate build, test and deployment to Docker and Kubernetes environments.</li>
+                <li>Build, package and deploy applications as containers using Docker.</li>
+                <li>Deploy, manage and scale workloads on Kubernetes clusters (deployments, services, config maps, rolling updates).</li>
+                <li>Configure NGINX Ingress Controller for routing, load balancing and TLS/SSL termination of application traffic.</li>
+                <li>Provision and manage cloud infrastructure on BytePlus, including compute instances, managed Kubernetes and networking.</li>
+                <li>Administer Linux servers and manage source code with Git, including branching strategy and merge workflows.</li>
+                <li>Administer MySQL, PostgreSQL and MongoDB databases, including installation, backup and restore, and performance tuning.</li>
+                <li>Monitor application and infrastructure health and troubleshoot production issues to keep systems stable and available.</li>
+              </ul>
+              <div class="tags"><span>Docker</span><span>Kubernetes</span><span>Jenkins</span><span>Bitbucket</span><span>BytePlus</span><span>NGINX</span><span>Linux</span></div>
+            </div>
+
+            <div class="job">
+              <span class="dot"></span>
+              <div class="job-head">
+                <h3>Full Stack Java Developer — Distribution Management System</h3>
+                <span class="when">Aug 2019 – Dec 2025</span>
+              </div>
+              <div class="org">PT. Paramadaksa Teknologi Nusantara (NEXSOFT)</div>
+              <span class="badge">Team Lead, ND6 Bug Team · 2023 – 2025</span>
+              <ul>
+                <li>Developed and maintained Distribution Management System (DMS) applications end-to-end using Java, Spring Boot and JavaScript.</li>
+                <li>Led the ND6 Bug Team: triaged and prioritized bug reports, assigned and reviewed fixes, and ensured timely resolution in production.</li>
+                <li>Designed and developed APIs, back-end services and databases supporting DMS business processes.</li>
+                <li>Built front-end architecture and user interactions for web applications.</li>
+                <li>Improved existing ND6 features (e.g. Generate Data Feed) to run faster and more efficiently.</li>
+                <li>Delivered new features to accommodate client business-process changes, working with the wider engineering team from design to launch.</li>
+              </ul>
+              <div class="tags"><span>Java</span><span>Spring Boot</span><span>JavaScript</span><span>React JS</span><span>SQL</span></div>
+            </div>
+
+            <div class="job past">
+              <span class="dot"></span>
+              <div class="job-head">
+                <h3>Earlier Career — Pharmaceutical &amp; Agro-industry</h3>
+                <span class="when">2013 – 2018</span>
+              </div>
+              <ul>
+                <li><b>Supervisor</b>, PT. Yarindo Farmatama (2015 – 2018) — coordinated medical representatives to reach regional sales targets.</li>
+                <li><b>Medical Representative</b>, PT. Meprofarm (2013 – 2014) — promoted products to hospitals, clinics and pharmacies.</li>
+                <li><b>Analyst Staff, R&amp;D Lab</b>, PT. BW Plantation Tbk (2013 – 2014) — analyzed soil, leaf, fertilizer and CPO quality and coordinated lab analysts.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
       </div>
-
-      <div class="job">
-        <div class="job-head">
-          <h3>Full Stack Java Developer — Distribution Management System</h3>
-          <span class="when">Aug 2019 – Dec 2025</span>
-        </div>
-        <div class="org">PT. Paramadaksa Teknologi Nusantara (NEXSOFT)</div>
-        <span class="badge">Team Lead, ND6 Bug Team · 2023 – 2025</span>
-        <ul>
-          <li>Developed and maintained Distribution Management System (DMS) applications end-to-end using Java, Spring Boot and JavaScript.</li>
-          <li>Led the ND6 Bug Team: triaged and prioritized bug reports, assigned and reviewed fixes, and ensured timely resolution in production.</li>
-          <li>Designed and developed APIs, back-end services and databases supporting DMS business processes.</li>
-          <li>Built front-end architecture and user interactions for web applications.</li>
-          <li>Improved existing ND6 features (e.g. Generate Data Feed) to run faster and more efficiently.</li>
-          <li>Delivered new features to accommodate client business-process changes, working with the wider engineering team from design to launch.</li>
-        </ul>
-      </div>
-
-      <div class="job past">
-        <div class="job-head">
-          <h3>Earlier career — Pharmaceutical &amp; Agro-industry</h3>
-          <span class="when">2013 – 2018</span>
-        </div>
-        <ul>
-          <li><b>Supervisor</b>, PT. Yarindo Farmatama (2015 – 2018) — coordinated medical representatives to reach regional sales targets.</li>
-          <li><b>Medical Representative</b>, PT. Meprofarm (2013 – 2014) — promoted products to hospitals, clinics and pharmacies.</li>
-          <li><b>Analyst Staff, R&amp;D Lab</b>, PT. BW Plantation Tbk (2013 – 2014) — analyzed soil, leaf, fertilizer and CPO quality and coordinated lab analysts.</li>
-        </ul>
-      </div>
-    </section>
-
-    <section>
-      <h2>Education</h2>
-      <div class="rows">
-        <div class="row">
-          <div><b>Purwadhika Digital Technology School</b>, Jakarta<div class="sub">Mobile &amp; Web Developer program</div></div>
-          <span class="when">2019</span>
-        </div>
-        <div class="row">
-          <div><b>Institut Pertanian Stiper</b>, Yogyakarta<div class="sub">Bachelor program</div></div>
-          <span class="when">2010</span>
-        </div>
-        <div class="row">
-          <div><b>Politeknik LPP</b>, Yogyakarta<div class="sub">Associate degree, Telecommunications Engineering</div></div>
-          <span class="when">2007</span>
-        </div>
-      </div>
-    </section>
+    </div>
   </article>
   <footer>© 2026 Aldi Lukito Diono</footer>
 </main>
