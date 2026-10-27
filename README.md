@@ -1,5 +1,9 @@
 # AldiDevOps
 
-Online CV of **Aldi Lukito Diono** — DevOps Engineer at PT. Paramadaksa Teknologi Nusantara (NEXSOFT).
+DevOps workspace of **Aldi Lukito Diono** — DevOps Engineer at PT. Paramadaksa Teknologi Nusantara (NEXSOFT).
 
-The CV is a single static page: [`index.html`](index.html). Open it in a browser, or use the **Download PDF** button to print it.
+## Contents
+
+| Folder | Description |
+|---|---|
+| [`CV_Aldi_Lukito/`](CV_Aldi_Lukito/) | Online CV (English / Indonesian), live at **https://aldicovo.github.io/AldiDevOps/CV_Aldi_Lukito/** |
