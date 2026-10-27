@@ -133,9 +133,12 @@ footer span:last-child{font-family:var(--mono)}
   .hero-bottom{margin-top:12px;padding-top:10px}.hero-note{font-size:10.5px;max-width:none}.availability{font-size:9px}
   .metrics{grid-template-columns:repeat(4,1fr)}
   .metrics .metric{padding:9px 16px}.metric strong{font-size:16px}.metric span{font-size:9px;margin-top:2px}
-  .content{grid-template-columns:200px minmax(0,1fr)}
-  .sidebar{padding:16px 15px;border-right:1px solid var(--line)}
-  .main{padding:16px 22px}
+  .hero,.metrics{break-after:avoid;page-break-after:avoid}
+  /* Firefox cannot fragment a grid across pages, so print uses floats instead */
+  .content{display:block;background:linear-gradient(to right,var(--panel) 0 200px,var(--line) 200px 201px,transparent 201px)}
+  .content:after{content:"";display:block;clear:both}
+  .sidebar{float:left;width:200px;padding:16px 15px;background:none;border:0}
+  .main{display:block;margin-left:200px;padding:16px 22px}
   section+section{margin-top:16px}
   .section-title{margin-bottom:9px;font-size:10px;break-after:avoid}
   .contact-list{gap:7px}.contact-list li{grid-template-columns:24px minmax(0,1fr);gap:8px}
