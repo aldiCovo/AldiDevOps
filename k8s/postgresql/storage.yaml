@@ -1,0 +1,33 @@
+# kubeadm has no storage provisioner, so this claim binds to a folder on AldiServer's disk.
+# Retain keeps the data if the claim is ever deleted.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgresql-data
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: postgresql
+    name: postgresql-data
+  hostPath:
+    path: /var/lib/aldi/postgresql
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgresql-data
+  namespace: postgresql
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  volumeName: postgresql-data
+  resources:
+    requests:
+      storage: 10Gi

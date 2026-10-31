@@ -1,0 +1,11 @@
+# No Ingress yet: the API has no login until user-service exists, so it stays inside the cluster.
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-service
+spec:
+  selector:
+    app: catalog-service
+  ports:
+    - port: 8080
+      targetPort: 8080
