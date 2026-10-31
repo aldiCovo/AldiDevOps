@@ -5,6 +5,7 @@ namespace: argocd
 
 resources:
   - namespace.yaml
+  - ingress.yaml
   - https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.6/manifests/install.yaml
 
 # MetalLB's only IP belongs to Traefik, so the UI uses a NodePort.
@@ -16,3 +17,12 @@ patches:
       - op: add
         path: /spec/type
         value: NodePort
+  # Cloudflare terminates HTTPS, so the server speaks plain HTTP behind Traefik.
+  - target:
+      kind: ConfigMap
+      name: argocd-cmd-params-cm
+    patch: |-
+      - op: add
+        path: /data
+        value:
+          server.insecure: "true"
