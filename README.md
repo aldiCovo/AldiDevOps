@@ -6,5 +6,5 @@ DevOps workspace of **Aldi Lukito Diono** — DevOps Engineer at PT. Paramadaksa
 
 | Folder | Description |
 |---|---|
-| [`CV_Aldi_Lukito/`](CV_Aldi_Lukito/) | Kubernetes manifests for the online CV, live at **https://aldilukito.aldiab.ai.id**. The application is in [`aldiCovo/cv-aldi-lukito`](https://github.com/aldiCovo/cv-aldi-lukito) |
+| [`apps/`](apps/) | Kubernetes manifests, one folder per application. The source code is in [`aldiCovo/AldiApps`](https://github.com/aldiCovo/AldiApps), under the same folder name |
 | [`k8s/`](k8s/) | Kubernetes configuration for AldiServer |

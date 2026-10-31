@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: ghcr.io/aldicovo/cv-aldi-lukito
+          image: ghcr.io/aldicovo/cvaldi
           ports:
             - containerPort: 80
           readinessProbe:
