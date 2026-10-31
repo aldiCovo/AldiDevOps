@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cv
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/aldiCovo/AldiDevOps.git
+    targetRevision: main
+    path: CV_Aldi_Lukito
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cv
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
