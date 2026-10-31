@@ -8,8 +8,13 @@ resources:
   - service.yaml
   - ingress.yaml
 
-# The ConfigMap name gets a hash of index.html, so a changed CV restarts the Pod.
+# The ConfigMap name gets a hash of default.conf, so a changed config restarts the Pod.
 configMapGenerator:
-  - name: cv-html
+  - name: nginx-config
     files:
-      - index.html
+      - default.conf
+
+# The build in aldiCovo/cv-aldi-lukito writes newTag, the commit the image was built from.
+images:
+  - name: ghcr.io/aldicovo/cv-aldi-lukito
+    newTag: "63dcacf"
