@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: nginx:1.31.8-alpine
+          image: ghcr.io/aldicovo/cv-aldi-lukito
           ports:
             - containerPort: 80
           readinessProbe:
@@ -30,10 +30,10 @@ spec:
             limits:
               memory: 64Mi
           volumeMounts:
-            - name: html
-              mountPath: /usr/share/nginx/html
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
               readOnly: true
       volumes:
-        - name: html
+        - name: nginx-config
           configMap:
-            name: cv-html
+            name: nginx-config
