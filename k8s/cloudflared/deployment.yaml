@@ -18,7 +18,7 @@ spec:
       containers:
         - name: cloudflared
           image: cloudflare/cloudflared:2026.10.7
-          # http2 runs over TCP 7844. This network restricts outbound UDP, which QUIC needs.
+          # http2 runs over TCP 7844, the path checked from this server before installing.
           args:
             - tunnel
             - --no-autoupdate
