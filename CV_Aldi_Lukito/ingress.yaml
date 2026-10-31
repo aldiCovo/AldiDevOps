@@ -5,7 +5,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: cv.aldiab.ai.id
+    - host: aldilukito.aldiab.ai.id
       http:
         paths:
           - path: /
