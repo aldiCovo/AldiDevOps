@@ -7,3 +7,4 @@ DevOps workspace of **Aldi Lukito Diono** — DevOps Engineer at PT. Paramadaksa
 | Folder | Description |
 |---|---|
 | [`CV_Aldi_Lukito/`](CV_Aldi_Lukito/) | Online CV (English / Indonesian), live at **https://aldicovo.github.io/AldiDevOps/CV_Aldi_Lukito/** |
+| [`k8s/`](k8s/) | Kubernetes configuration for AldiServer |

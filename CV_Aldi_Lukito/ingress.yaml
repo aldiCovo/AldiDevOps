@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cv
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: aldilukito.aldiab.ai.id
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cv
+                port:
+                  number: 80
