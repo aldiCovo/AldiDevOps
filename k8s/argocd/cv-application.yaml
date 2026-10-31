@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/aldiCovo/AldiDevOps.git
     targetRevision: main
-    path: CV_Aldi_Lukito
+    path: apps/cvaldi
   destination:
     server: https://kubernetes.default.svc
     namespace: cv

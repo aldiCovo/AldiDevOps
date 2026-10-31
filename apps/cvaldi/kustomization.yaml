@@ -14,7 +14,7 @@ configMapGenerator:
     files:
       - default.conf
 
-# The build in aldiCovo/cv-aldi-lukito writes newTag, the commit the image was built from.
+# build.sh in aldiCovo/AldiApps writes newTag, the commit the image was built from.
 images:
-  - name: ghcr.io/aldicovo/cv-aldi-lukito
-    newTag: "d921408"
+  - name: ghcr.io/aldicovo/cvaldi
+    newTag: "f6bd532"

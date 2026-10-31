@@ -10,4 +10,4 @@ Configuration for the single-node kubeadm cluster on AldiServer.
 | [`argocd/cv-application.yaml`](argocd/cv-application.yaml) | `kubectl apply -f k8s/argocd/cv-application.yaml` (once, after ArgoCD is installed) |
 | [`cloudflared/`](cloudflared/) | `kubectl apply -f k8s/cloudflared/namespace.yaml`, create the `cloudflared-token` Secret, then `kubectl apply -f k8s/cloudflared/deployment.yaml` |
 
-These files are applied by hand. ArgoCD only syncs the CV manifests in [`CV_Aldi_Lukito/`](../CV_Aldi_Lukito/).
+These files are applied by hand. ArgoCD syncs the application manifests in [`apps/`](../apps/).
