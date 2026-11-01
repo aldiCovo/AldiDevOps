@@ -26,6 +26,8 @@ spec:
               value: http://search-service.search.svc:8080
             - name: USER_URL
               value: http://user-service.user.svc:8080
+            - name: ORDER_URL
+              value: http://order-service.order.svc:8080
           readinessProbe:
             httpGet:
               path: /healthz

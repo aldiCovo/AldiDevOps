@@ -1,0 +1,11 @@
+# No Ingress: only events reach this. The Service is for looking at its health from inside.
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+spec:
+  selector:
+    app: payment-service
+  ports:
+    - port: 8080
+      targetPort: 8080

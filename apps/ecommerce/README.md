@@ -7,6 +7,8 @@ Everything for the shop, with one folder per service and per tool it uses.
 | [`catalog-service/`](catalog-service/) | Products and stock | ArgoCD |
 | [`search-service/`](search-service/) | Product search | ArgoCD |
 | [`user-service/`](user-service/) | Accounts and login | ArgoCD |
+| [`order-service/`](order-service/) | Orders, and the saga that reserves stock and takes payment | ArgoCD |
+| [`payment-service/`](payment-service/) | Payments, simulated for now | ArgoCD |
 | [`web/`](web/) | The storefront at `prastika.aldiab.ai.id`, and the only part the internet reaches | ArgoCD |
 | [`postgresql/`](postgresql/) | Database | `kubectl apply -f apps/ecommerce/postgresql/namespace.yaml`, create the `postgresql-superuser` Secret as below, then `kubectl apply -f apps/ecommerce/postgresql/` |
 | [`rabbitmq/`](rabbitmq/) | Events between services | `kubectl apply -f apps/ecommerce/rabbitmq/namespace.yaml`, create the `rabbitmq-admin` Secret as below, then `kubectl apply -f apps/ecommerce/rabbitmq/` |
@@ -92,6 +94,31 @@ kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl set_permissions -p shop catal
 kubectl create secret generic catalog-rabbitmq -n catalog \
   --from-literal=url="amqp://catalog:$PASSWORD@rabbitmq.rabbitmq.svc:5672/shop"
 unset PASSWORD
+```
+
+### Add the databases and users for the order saga
+
+Run this once, on AldiServer. It also lets catalog-service read order events, so run it before deploying a catalog-service that reserves stock:
+
+```bash
+kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl set_permissions -p shop catalog '^(catalog-service\..*|catalog\.events|order\.events)$' '^(catalog-service\..*|catalog\.events)$' '^(catalog-service\..*|order\.events)$'
+for APP in order payment; do
+  DB_PASSWORD=$(openssl rand -hex 24)
+  MQ_PASSWORD=$(openssl rand -hex 24)
+  kubectl exec -i -n postgresql postgresql-0 -- psql -U postgres -v ON_ERROR_STOP=1 -v password="$DB_PASSWORD" -v app="$APP" <<'SQL'
+CREATE ROLE :"app" LOGIN PASSWORD :'password';
+CREATE DATABASE :"app" OWNER :"app";
+SQL
+  kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl add_user "$APP" "$MQ_PASSWORD"
+  kubectl create namespace "$APP"
+  kubectl create secret generic "$APP-database" -n "$APP" \
+    --from-literal=url="postgres://$APP:$DB_PASSWORD@postgresql.postgresql.svc:5432/$APP?sslmode=disable"
+  kubectl create secret generic "$APP-rabbitmq" -n "$APP" \
+    --from-literal=url="amqp://$APP:$MQ_PASSWORD@rabbitmq.rabbitmq.svc:5672/shop"
+done
+unset DB_PASSWORD MQ_PASSWORD
+kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl set_permissions -p shop order '^(order-service\..*|order\.events|catalog\.events|payment\.events)$' '^(order-service\..*|order\.events)$' '^(order-service\..*|catalog\.events|payment\.events)$'
+kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl set_permissions -p shop payment '^(payment-service\..*|order\.events|payment\.events)$' '^(payment-service\..*|payment\.events)$' '^(payment-service\..*|order\.events)$'
 ```
 
 ### Open the management UI
