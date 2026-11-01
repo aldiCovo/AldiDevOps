@@ -1,0 +1,33 @@
+# kubeadm has no storage provisioner, so this claim binds to a folder on AldiServer's disk.
+# Retain keeps the data if the claim is ever deleted.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: elasticsearch-data
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: elasticsearch
+    name: elasticsearch-data
+  hostPath:
+    path: /var/lib/aldi/elasticsearch
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-data
+  namespace: elasticsearch
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  volumeName: elasticsearch-data
+  resources:
+    requests:
+      storage: 10Gi

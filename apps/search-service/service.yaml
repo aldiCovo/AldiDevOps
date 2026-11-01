@@ -1,0 +1,11 @@
+# No Ingress yet: it opens with the storefront, on the shop's own address.
+apiVersion: v1
+kind: Service
+metadata:
+  name: search-service
+spec:
+  selector:
+    app: search-service
+  ports:
+    - port: 8080
+      targetPort: 8080
