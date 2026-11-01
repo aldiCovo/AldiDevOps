@@ -12,6 +12,8 @@ Configuration for the single-node kubeadm cluster on AldiServer.
 | [`cloudflared/`](cloudflared/) | `kubectl apply -f k8s/cloudflared/namespace.yaml`, create the `cloudflared-token` Secret, then `kubectl apply -f k8s/cloudflared/deployment.yaml` |
 | [`postgresql/`](postgresql/) | `kubectl apply -f k8s/postgresql/namespace.yaml`, create the `postgresql-superuser` Secret as below, then `kubectl apply -f k8s/postgresql/` |
 | [`rabbitmq/`](rabbitmq/) | `kubectl apply -f k8s/rabbitmq/namespace.yaml`, create the `rabbitmq-admin` Secret as below, then `kubectl apply -f k8s/rabbitmq/` |
+| [`elasticsearch/`](elasticsearch/) | `kubectl apply -f k8s/elasticsearch/namespace.yaml`, create the `elasticsearch-admin` Secret as below, then `kubectl apply -f k8s/elasticsearch/` |
+| [`argocd/search-service-application.yaml`](argocd/search-service-application.yaml) | `kubectl apply -f k8s/argocd/search-service-application.yaml` (once, after [its users exist](#add-the-users-for-search-service) and its first image is built) |
 
 These files are applied by hand. ArgoCD syncs the application manifests in [`apps/`](../apps/).
 
@@ -73,4 +75,36 @@ To open the management UI, run this on AldiServer, then browse to `http://localh
 ```bash
 kubectl port-forward -n rabbitmq svc/rabbitmq 15672:15672
 kubectl get secret rabbitmq-admin -n rabbitmq -o jsonpath='{.data.password}' | base64 -d; echo
+```
+
+## Elasticsearch
+
+One node holds the search index. The data is in `/var/lib/aldi/elasticsearch` on AldiServer, and it can be rebuilt from the catalog. It is only reachable inside the cluster, at `elasticsearch.elasticsearch.svc:9200`.
+
+Create the admin Secret, once, before the first `kubectl apply -f k8s/elasticsearch/`. Unlike RabbitMQ, a changed password takes effect when the Pod restarts:
+
+```bash
+kubectl create secret generic elasticsearch-admin -n elasticsearch \
+  --from-literal=password="$(openssl rand -hex 24)"
+```
+
+### Add the users for search-service
+
+search-service may only use its `products` index in Elasticsearch, and its own queue in RabbitMQ. Run this once, on AldiServer, after `elasticsearch-0` and `rabbitmq-0` are ready and the `shop` vhost exists:
+
+```bash
+ADMIN=$(kubectl get secret elasticsearch-admin -n elasticsearch -o jsonpath='{.data.password}' | base64 -d)
+ES_PASSWORD=$(openssl rand -hex 24)
+MQ_PASSWORD=$(openssl rand -hex 24)
+kubectl exec -n elasticsearch elasticsearch-0 -- curl -sS -u "elastic:$ADMIN" -XPUT localhost:9200/_security/role/search_service \
+  -H 'Content-Type: application/json' -d '{"cluster":["monitor"],"indices":[{"names":["products"],"privileges":["all"]}]}'
+kubectl exec -n elasticsearch elasticsearch-0 -- curl -sS -u "elastic:$ADMIN" -XPUT localhost:9200/_security/user/search_service \
+  -H 'Content-Type: application/json' -d "{\"password\":\"$ES_PASSWORD\",\"roles\":[\"search_service\"]}"
+kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl add_user search "$MQ_PASSWORD"
+kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl set_permissions -p shop search '^(search-service\..*|catalog\.events)$' '^search-service\..*$' '^(search-service\..*|catalog\.events)$'
+kubectl create namespace search
+kubectl create secret generic search-service -n search \
+  --from-literal=elasticsearch-url="http://search_service:$ES_PASSWORD@elasticsearch.elasticsearch.svc:9200" \
+  --from-literal=rabbitmq-url="amqp://search:$MQ_PASSWORD@rabbitmq.rabbitmq.svc:5672/shop"
+unset ADMIN ES_PASSWORD MQ_PASSWORD
 ```

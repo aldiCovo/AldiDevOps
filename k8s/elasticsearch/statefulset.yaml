@@ -1,0 +1,101 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  namespace: elasticsearch
+spec:
+  clusterIP: None
+  selector:
+    app: elasticsearch
+  ports:
+    - port: 9200
+      targetPort: 9200
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+  namespace: elasticsearch
+  labels:
+    app: elasticsearch
+spec:
+  serviceName: elasticsearch
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      # Lets Elasticsearch flush its shards before stopping.
+      terminationGracePeriodSeconds: 120
+      # A new hostPath folder belongs to root, and Elasticsearch runs as user 1000.
+      initContainers:
+        - name: fix-data-owner
+          image: elasticsearch:9.5.5
+          command: ["chown", "-R", "1000:0", "/usr/share/elasticsearch/data"]
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: data
+              mountPath: /usr/share/elasticsearch/data
+      containers:
+        - name: elasticsearch
+          image: elasticsearch:9.5.5
+          ports:
+            - containerPort: 9200
+          env:
+            - name: discovery.type
+              value: single-node
+            # Logins stay on. HTTP is plain because it only travels inside the cluster.
+            - name: xpack.security.enabled
+              value: "true"
+            - name: xpack.security.http.ssl.enabled
+              value: "false"
+            - name: xpack.security.transport.ssl.enabled
+              value: "false"
+            - name: xpack.ml.enabled
+              value: "false"
+            # Avoids having to raise vm.max_map_count on AldiServer.
+            - name: node.store.allow_mmap
+              value: "false"
+            # Half of the memory limit, as Elasticsearch recommends.
+            - name: ES_JAVA_OPTS
+              value: -Xms1g -Xmx1g
+            # The Secret is created by hand so the password never enters this public repo.
+            # Unlike RabbitMQ, a changed Secret takes effect when the Pod restarts.
+            - name: ELASTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: elasticsearch-admin
+                  key: password
+          # Starting takes a while, so this allows up to five minutes before the other probes count.
+          startupProbe:
+            tcpSocket:
+              port: 9200
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            tcpSocket:
+              port: 9200
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 9200
+            periodSeconds: 15
+            failureThreshold: 4
+          resources:
+            requests:
+              cpu: 200m
+              memory: 1Gi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: data
+              mountPath: /usr/share/elasticsearch/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: elasticsearch-data
