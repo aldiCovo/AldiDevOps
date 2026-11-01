@@ -7,11 +7,16 @@ Everything for the shop, with one folder per service and per tool it uses.
 | [`catalog-service/`](catalog-service/) | Products and stock | ArgoCD |
 | [`search-service/`](search-service/) | Product search | ArgoCD |
 | [`user-service/`](user-service/) | Accounts and login | ArgoCD |
+| [`web/`](web/) | The storefront at `prastika.aldiab.ai.id`, and the only part the internet reaches | ArgoCD |
 | [`postgresql/`](postgresql/) | Database | `kubectl apply -f apps/ecommerce/postgresql/namespace.yaml`, create the `postgresql-superuser` Secret as below, then `kubectl apply -f apps/ecommerce/postgresql/` |
 | [`rabbitmq/`](rabbitmq/) | Events between services | `kubectl apply -f apps/ecommerce/rabbitmq/namespace.yaml`, create the `rabbitmq-admin` Secret as below, then `kubectl apply -f apps/ecommerce/rabbitmq/` |
 | [`elasticsearch/`](elasticsearch/) | Search index | `kubectl apply -f apps/ecommerce/elasticsearch/namespace.yaml`, create the `elasticsearch-admin` Secret as below, then `kubectl apply -f apps/ecommerce/elasticsearch/` |
 
 The ArgoCD Applications are in [`k8s/argocd/`](../../k8s/argocd/). The other folders are applied by hand.
+
+## Open the shop to the internet
+
+The Ingress in `web/` routes the domain, but nothing reaches it until Cloudflare knows about it. In the Cloudflare dashboard, add a Public Hostname to the tunnel: `prastika.aldiab.ai.id`, type `HTTP`, service `traefik.traefik.svc.cluster.local:80`.
 
 ## PostgreSQL
 

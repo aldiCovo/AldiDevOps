@@ -1,4 +1,4 @@
-# No Ingress yet: login has no rate limit until the storefront puts one in front of it.
+# No Ingress: the internet only reaches this through web, behind a rate limit.
 apiVersion: v1
 kind: Service
 metadata:
