@@ -43,3 +43,23 @@ spec:
                 name: web
                 port:
                   number: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web-orders
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: web-order-rate-limit@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: prastika.aldiab.ai.id
+      http:
+        paths:
+          - path: /api/orders
+            pathType: Exact
+            backend:
+              service:
+                name: web
+                port:
+                  number: 8080

@@ -11,3 +11,16 @@ spec:
     burst: 10
     sourceCriterion:
       requestHeaderName: Cf-Connecting-Ip
+---
+# Orders hold stock, so creating them gets a limit of its own.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: order-rate-limit
+spec:
+  rateLimit:
+    average: 30
+    period: 1m
+    burst: 30
+    sourceCriterion:
+      requestHeaderName: Cf-Connecting-Ip

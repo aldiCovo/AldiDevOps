@@ -13,5 +13,7 @@ Configuration for the single-node kubeadm cluster on AldiServer.
 | [`argocd/search-service-application.yaml`](argocd/search-service-application.yaml) | `kubectl apply -f k8s/argocd/search-service-application.yaml` (once, after [its users exist](../apps/ecommerce/README.md#add-the-users-for-search-service) and its first image is built) |
 | [`argocd/user-service-application.yaml`](argocd/user-service-application.yaml) | `kubectl apply -f k8s/argocd/user-service-application.yaml` (once, after [its database and key exist](../apps/ecommerce/README.md#add-a-database-and-key-for-user-service) and its first image is built) |
 | [`argocd/web-application.yaml`](argocd/web-application.yaml) | `kubectl apply -f k8s/argocd/web-application.yaml` (once, after its first image is built) |
+| [`argocd/order-service-application.yaml`](argocd/order-service-application.yaml) | `kubectl apply -f k8s/argocd/order-service-application.yaml` (once, after [its database and users exist](../apps/ecommerce/README.md#add-the-databases-and-users-for-the-order-saga) and its first image is built) |
+| [`argocd/payment-service-application.yaml`](argocd/payment-service-application.yaml) | `kubectl apply -f k8s/argocd/payment-service-application.yaml` (once, after the same) |
 
 These files are applied by hand. ArgoCD syncs the application manifests in [`apps/`](../apps/). The online shop has its own folder, [`apps/ecommerce/`](../apps/ecommerce/).
