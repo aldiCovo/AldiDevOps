@@ -6,6 +6,7 @@ Everything for the shop, with one folder per service and per tool it uses.
 |---|---|---|
 | [`catalog-service/`](catalog-service/) | Products and stock | ArgoCD |
 | [`search-service/`](search-service/) | Product search | ArgoCD |
+| [`user-service/`](user-service/) | Accounts and login | ArgoCD |
 | [`postgresql/`](postgresql/) | Database | `kubectl apply -f apps/ecommerce/postgresql/namespace.yaml`, create the `postgresql-superuser` Secret as below, then `kubectl apply -f apps/ecommerce/postgresql/` |
 | [`rabbitmq/`](rabbitmq/) | Events between services | `kubectl apply -f apps/ecommerce/rabbitmq/namespace.yaml`, create the `rabbitmq-admin` Secret as below, then `kubectl apply -f apps/ecommerce/rabbitmq/` |
 | [`elasticsearch/`](elasticsearch/) | Search index | `kubectl apply -f apps/ecommerce/elasticsearch/namespace.yaml`, create the `elasticsearch-admin` Secret as below, then `kubectl apply -f apps/ecommerce/elasticsearch/` |
@@ -36,6 +37,31 @@ SQL
 kubectl create namespace catalog
 kubectl create secret generic catalog-database -n catalog \
   --from-literal=url="postgres://catalog:$PASSWORD@postgresql.postgresql.svc:5432/catalog?sslmode=disable"
+```
+
+### Add a database and key for user-service
+
+Run this once, on AldiServer, after the `postgresql-0` Pod is ready. The key signs login tokens. A new key logs everyone out, because tokens signed with the old one stop working:
+
+```bash
+PASSWORD=$(openssl rand -hex 24)
+kubectl exec -i -n postgresql postgresql-0 -- psql -U postgres -v ON_ERROR_STOP=1 -v password="$PASSWORD" <<'SQL'
+CREATE ROLE user_service LOGIN PASSWORD :'password';
+CREATE DATABASE users OWNER user_service;
+SQL
+kubectl create namespace user
+kubectl create secret generic user-database -n user \
+  --from-literal=url="postgres://user_service:$PASSWORD@postgresql.postgresql.svc:5432/users?sslmode=disable"
+unset PASSWORD
+openssl genpkey -algorithm ed25519 | kubectl create secret generic user-service-jwt -n user --from-file=private-key=/dev/stdin
+```
+
+### Make a user an admin
+
+New accounts are customers, and the API can't change that. Run this on AldiServer. The new role reaches tokens at the user's next login:
+
+```bash
+kubectl exec -n postgresql postgresql-0 -- psql -U postgres -d users -c "UPDATE users SET role = 'admin', updated_at = now() WHERE email = 'name@example.com'"
 ```
 
 ## RabbitMQ

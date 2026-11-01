@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  labels:
+    app: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: ghcr.io/aldicovo/user-service
+          ports:
+            - containerPort: 8080
+          env:
+            # The Secrets are created by hand so the password and key never enter this public repo.
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: user-database
+                  key: url
+            - name: JWT_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: user-service-jwt
+                  key: private-key
+            # Password hashes make a lot of garbage, so Go must collect it before the limit below.
+            - name: GOMEMLIMIT
+              value: 200MiB
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
