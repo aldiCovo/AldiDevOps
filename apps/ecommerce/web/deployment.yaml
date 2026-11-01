@@ -28,6 +28,8 @@ spec:
               value: http://user-service.user.svc:8080
             - name: ORDER_URL
               value: http://order-service.order.svc:8080
+            - name: REALTIME_URL
+              value: http://realtime-service.realtime.svc:8080
           readinessProbe:
             httpGet:
               path: /healthz

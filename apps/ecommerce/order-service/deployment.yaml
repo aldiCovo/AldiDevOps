@@ -31,6 +31,11 @@ spec:
                 secretKeyRef:
                   name: order-rabbitmq
                   key: url
+            - name: NATS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: order-nats
+                  key: url
             - name: CATALOG_URL
               value: http://catalog-service.catalog.svc:8080
             - name: USER_URL

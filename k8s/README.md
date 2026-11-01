@@ -15,5 +15,6 @@ Configuration for the single-node kubeadm cluster on AldiServer.
 | [`argocd/web-application.yaml`](argocd/web-application.yaml) | `kubectl apply -f k8s/argocd/web-application.yaml` (once, after its first image is built) |
 | [`argocd/order-service-application.yaml`](argocd/order-service-application.yaml) | `kubectl apply -f k8s/argocd/order-service-application.yaml` (once, after [its database and users exist](../apps/ecommerce/README.md#add-the-databases-and-users-for-the-order-saga) and its first image is built) |
 | [`argocd/payment-service-application.yaml`](argocd/payment-service-application.yaml) | `kubectl apply -f k8s/argocd/payment-service-application.yaml` (once, after the same) |
+| [`argocd/realtime-service-application.yaml`](argocd/realtime-service-application.yaml) | `kubectl apply -f k8s/argocd/realtime-service-application.yaml` (once, after [NATS and its Secrets exist](../apps/ecommerce/README.md#install-it-with-its-passwords) and its first image is built) |
 
 These files are applied by hand. ArgoCD syncs the application manifests in [`apps/`](../apps/). The online shop has its own folder, [`apps/ecommerce/`](../apps/ecommerce/).
