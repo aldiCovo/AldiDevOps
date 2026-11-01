@@ -1,4 +1,4 @@
-# No Ingress yet: the API has no login until user-service exists, so it stays inside the cluster.
+# No Ingress: this API has no login on its writes, so the internet only reaches it through web.
 apiVersion: v1
 kind: Service
 metadata:
