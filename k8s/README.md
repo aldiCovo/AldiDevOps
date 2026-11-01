@@ -52,6 +52,22 @@ kubectl create secret generic rabbitmq-admin -n rabbitmq \
   --from-literal=password="$(openssl rand -hex 24)"
 ```
 
+### Add a user for catalog-service
+
+Applications share the `shop` vhost, each with its own user. catalog-service may only declare and publish to its `catalog.events` exchange. Run this once, on AldiServer, before the Deployment that needs the Secret:
+
+```bash
+PASSWORD=$(openssl rand -hex 24)
+kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl add_vhost shop
+kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl add_user catalog "$PASSWORD"
+kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl set_permissions -p shop catalog '^catalog\.events$' '^catalog\.events$' '^$'
+kubectl create secret generic catalog-rabbitmq -n catalog \
+  --from-literal=url="amqp://catalog:$PASSWORD@rabbitmq.rabbitmq.svc:5672/shop"
+unset PASSWORD
+```
+
+### Open the management UI
+
 To open the management UI, run this on AldiServer, then browse to `http://localhost:15672` through an SSH tunnel and log in as `admin`:
 
 ```bash
