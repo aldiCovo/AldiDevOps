@@ -1,3 +1,14 @@
+# RabbitMQ otherwise sizes its memory alarm from the server's RAM, not the Pod's limit,
+# and would be OOM-killed before it slows publishers down. Keep this equal to the limit.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq-config
+  namespace: rabbitmq
+data:
+  90-memory.conf: |
+    total_memory_available_override_value = 1GiB
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -71,7 +82,14 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/rabbitmq
+            - name: config
+              mountPath: /etc/rabbitmq/conf.d/90-memory.conf
+              subPath: 90-memory.conf
+              readOnly: true
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: rabbitmq-data
+        - name: config
+          configMap:
+            name: rabbitmq-config
