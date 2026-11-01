@@ -11,5 +11,6 @@ Configuration for the single-node kubeadm cluster on AldiServer.
 | [`argocd/catalog-service-application.yaml`](argocd/catalog-service-application.yaml) | `kubectl apply -f k8s/argocd/catalog-service-application.yaml` (once, after [its database exists](../apps/ecommerce/README.md#add-a-database-for-catalog-service) and its first image is built) |
 | [`cloudflared/`](cloudflared/) | `kubectl apply -f k8s/cloudflared/namespace.yaml`, create the `cloudflared-token` Secret, then `kubectl apply -f k8s/cloudflared/deployment.yaml` |
 | [`argocd/search-service-application.yaml`](argocd/search-service-application.yaml) | `kubectl apply -f k8s/argocd/search-service-application.yaml` (once, after [its users exist](../apps/ecommerce/README.md#add-the-users-for-search-service) and its first image is built) |
+| [`argocd/user-service-application.yaml`](argocd/user-service-application.yaml) | `kubectl apply -f k8s/argocd/user-service-application.yaml` (once, after [its database and key exist](../apps/ecommerce/README.md#add-a-database-and-key-for-user-service) and its first image is built) |
 
 These files are applied by hand. ArgoCD syncs the application manifests in [`apps/`](../apps/). The online shop has its own folder, [`apps/ecommerce/`](../apps/ecommerce/).
