@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: realtime-service
+  labels:
+    app: realtime-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: realtime-service
+  template:
+    metadata:
+      labels:
+        app: realtime-service
+    spec:
+      containers:
+        - name: realtime-service
+          image: ghcr.io/aldicovo/realtime-service
+          ports:
+            - containerPort: 8080
+          env:
+            # The Secret is created by hand so the password never enters this public repo.
+            - name: NATS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: realtime-nats
+                  key: url
+            - name: USER_URL
+              value: http://user-service.user.svc:8080
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              memory: 128Mi

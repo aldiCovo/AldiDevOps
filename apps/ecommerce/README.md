@@ -9,12 +9,38 @@ Everything for the shop, with one folder per service and per tool it uses.
 | [`user-service/`](user-service/) | Accounts and login | ArgoCD |
 | [`order-service/`](order-service/) | Orders, and the saga that reserves stock and takes payment | ArgoCD |
 | [`payment-service/`](payment-service/) | Payments, simulated for now | ArgoCD |
+| [`realtime-service/`](realtime-service/) | Tells browsers when an order changes, over WebSockets | ArgoCD |
 | [`web/`](web/) | The storefront at `prastika.aldiab.ai.id`, and the only part the internet reaches | ArgoCD |
 | [`postgresql/`](postgresql/) | Database | `kubectl apply -f apps/ecommerce/postgresql/namespace.yaml`, create the `postgresql-superuser` Secret as below, then `kubectl apply -f apps/ecommerce/postgresql/` |
 | [`rabbitmq/`](rabbitmq/) | Events between services | `kubectl apply -f apps/ecommerce/rabbitmq/namespace.yaml`, create the `rabbitmq-admin` Secret as below, then `kubectl apply -f apps/ecommerce/rabbitmq/` |
 | [`elasticsearch/`](elasticsearch/) | Search index | `kubectl apply -f apps/ecommerce/elasticsearch/namespace.yaml`, create the `elasticsearch-admin` Secret as below, then `kubectl apply -f apps/ecommerce/elasticsearch/` |
+| [`nats/`](nats/) | Signals that an order changed | As below |
 
 The ArgoCD Applications are in [`k8s/argocd/`](../../k8s/argocd/). The other folders are applied by hand.
+
+## NATS
+
+Core NATS, with no JetStream and no volume. It keeps no messages, so a restart only loses signals, and browsers catch up from the order status in PostgreSQL. RabbitMQ carries the events that must not be lost.
+
+### Install it with its passwords
+
+Run this once, on AldiServer. The order-service Deployment needs `order-nats`, so run it before ArgoCD syncs that change, or the new Pod waits until the Secret exists:
+
+```bash
+kubectl apply -f apps/ecommerce/nats/namespace.yaml
+ORDER_PASSWORD=$(openssl rand -hex 24)
+REALTIME_PASSWORD=$(openssl rand -hex 24)
+kubectl create secret generic nats-passwords -n nats \
+  --from-literal=order="$ORDER_PASSWORD" --from-literal=realtime="$REALTIME_PASSWORD"
+kubectl create secret generic order-nats -n order \
+  --from-literal=url="nats://order:$ORDER_PASSWORD@nats.nats.svc:4222"
+kubectl create namespace realtime
+kubectl create secret generic realtime-nats -n realtime \
+  --from-literal=url="nats://realtime:$REALTIME_PASSWORD@nats.nats.svc:4222"
+unset ORDER_PASSWORD REALTIME_PASSWORD
+kubectl apply -f apps/ecommerce/nats/
+kubectl rollout status -n nats deploy/nats
+```
 
 ## Open the shop to the internet
 
