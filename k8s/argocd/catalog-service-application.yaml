@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/aldiCovo/AldiDevOps.git
     targetRevision: main
-    path: apps/catalog-service
+    path: apps/ecommerce/catalog-service
   destination:
     server: https://kubernetes.default.svc
     namespace: catalog
