@@ -1,0 +1,33 @@
+# kubeadm has no storage provisioner, so this claim binds to a folder on AldiServer's disk.
+# Retain keeps the data if the claim is ever deleted.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: rabbitmq-data
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  claimRef:
+    namespace: rabbitmq
+    name: rabbitmq-data
+  hostPath:
+    path: /var/lib/aldi/rabbitmq
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rabbitmq-data
+  namespace: rabbitmq
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  volumeName: rabbitmq-data
+  resources:
+    requests:
+      storage: 5Gi

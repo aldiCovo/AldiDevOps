@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: rabbitmq
+spec:
+  clusterIP: None
+  selector:
+    app: rabbitmq
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: 5672
+    - name: management
+      port: 15672
+      targetPort: 15672
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+  namespace: rabbitmq
+  labels:
+    app: rabbitmq
+spec:
+  serviceName: rabbitmq
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      # Lets RabbitMQ write its queues to disk before stopping.
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:4.3.7-management-alpine
+          ports:
+            - containerPort: 5672
+            - containerPort: 15672
+          env:
+            # The Secret is created by hand so the password never enters this public repo.
+            - name: RABBITMQ_DEFAULT_USER
+              value: admin
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-admin
+                  key: password
+          # Not rabbitmq-diagnostics: exec probes run as root, and on a first start the CLI
+          # could create .erlang.cookie before the server, which then can't read it.
+          readinessProbe:
+            tcpSocket:
+              port: 5672
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 5672
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 4
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/rabbitmq
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: rabbitmq-data
