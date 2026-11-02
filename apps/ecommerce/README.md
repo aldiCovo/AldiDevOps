@@ -18,7 +18,26 @@ Everything for the shop, with one folder per service and per tool it uses.
 | [`nats/`](nats/) | Signals that an order changed | As below |
 | [`mailpit/`](mailpit/) | Catches the shop's emails, and delivers none | `kubectl apply -f apps/ecommerce/mailpit/namespace.yaml`, then `kubectl apply -f apps/ecommerce/mailpit/` |
 
-The ArgoCD Applications are in [`k8s/argocd/`](../../k8s/argocd/). The other folders are applied by hand.
+The folders applied with ArgoCD all belong to one Application, `ecommerce`, which deploys what [`kustomization.yaml`](kustomization.yaml) lists. The other folders are applied by hand, so that a sync can never touch their data.
+
+## Deploy the services
+
+Each service keeps its own folder, namespace and image tag. The namespaces are created by hand, because the Secrets below must exist before their service starts:
+
+```bash
+for NAMESPACE in catalog search user order payment realtime notification web; do
+  kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+done
+kubectl apply -f k8s/argocd/ecommerce-application.yaml
+```
+
+To add a service, add its folder to `kustomization.yaml`. It needs no Application of its own.
+
+To sync without waiting for ArgoCD's next check:
+
+```bash
+kubectl annotate application ecommerce -n argocd argocd.argoproj.io/refresh=normal --overwrite
+```
 
 ## NATS
 
