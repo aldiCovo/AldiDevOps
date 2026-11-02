@@ -11,6 +11,7 @@ Everything for the shop, with one folder per service and per tool it uses.
 | [`payment-service/`](payment-service/) | Payments, simulated for now | ArgoCD |
 | [`realtime-service/`](realtime-service/) | Tells browsers when an order changes, over WebSockets | ArgoCD |
 | [`notification-service/`](notification-service/) | Emails customers when their order finishes | ArgoCD |
+| [`cart-service/`](cart-service/) | Keeps each customer's cart on their account | ArgoCD |
 | [`web/`](web/) | The storefront at `prastika.aldiab.ai.id`, and the only part the internet reaches | ArgoCD |
 | [`postgresql/`](postgresql/) | Database | ArgoCD, after the `postgresql-superuser` Secret below exists |
 | [`rabbitmq/`](rabbitmq/) | Events between services | ArgoCD, after the `rabbitmq-admin` Secret below exists |
@@ -29,7 +30,7 @@ ArgoCD does apply a change to a tool as soon as it's merged, and most changes to
 Each service keeps its own folder, namespace and image tag. The namespaces are created by hand, because the Secrets below must exist before anything that uses them starts:
 
 ```bash
-for NAMESPACE in postgresql rabbitmq elasticsearch nats mailpit catalog search user order payment realtime notification web; do
+for NAMESPACE in postgresql rabbitmq elasticsearch nats mailpit catalog search user order payment realtime notification cart web; do
   kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 done
 kubectl apply -f k8s/argocd/ecommerce-application.yaml
@@ -123,6 +124,22 @@ CREATE DATABASE catalog OWNER catalog;
 SQL
 kubectl create secret generic catalog-database -n catalog \
   --from-literal=url="postgres://catalog:$PASSWORD@postgresql.postgresql.svc:5432/catalog?sslmode=disable"
+```
+
+### Add a database for cart-service
+
+Run this once, on AldiServer, before ArgoCD syncs cart-service, or its Pod waits until the Secret exists:
+
+```bash
+kubectl create namespace cart --dry-run=client -o yaml | kubectl apply -f -
+DB_PASSWORD=$(openssl rand -hex 24)
+kubectl exec -i -n postgresql postgresql-0 -- psql -U postgres -v ON_ERROR_STOP=1 -v password="$DB_PASSWORD" <<'SQL'
+CREATE ROLE cart LOGIN PASSWORD :'password';
+CREATE DATABASE cart OWNER cart;
+SQL
+kubectl create secret generic cart-database -n cart \
+  --from-literal=url="postgres://cart:$DB_PASSWORD@postgresql.postgresql.svc:5432/cart?sslmode=disable"
+unset DB_PASSWORD
 ```
 
 ### Add a database and key for user-service

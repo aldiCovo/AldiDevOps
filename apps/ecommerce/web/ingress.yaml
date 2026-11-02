@@ -83,3 +83,23 @@ spec:
                 name: web
                 port:
                   number: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web-cart
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: web-cart-rate-limit@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: prastika.aldiab.ai.id
+      http:
+        paths:
+          - path: /api/cart
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 8080

@@ -1,0 +1,11 @@
+# No Ingress: the internet only reaches this through web.
+apiVersion: v1
+kind: Service
+metadata:
+  name: cart-service
+spec:
+  selector:
+    app: cart-service
+  ports:
+    - port: 8080
+      targetPort: 8080

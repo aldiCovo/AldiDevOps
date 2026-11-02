@@ -15,6 +15,7 @@ resources:
   - payment-service
   - realtime-service
   - notification-service
+  - cart-service
   - web
 
 # Tools start before the services that need them. ArgoCD never deletes these objects, even if
