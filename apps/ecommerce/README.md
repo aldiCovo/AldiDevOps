@@ -12,20 +12,24 @@ Everything for the shop, with one folder per service and per tool it uses.
 | [`realtime-service/`](realtime-service/) | Tells browsers when an order changes, over WebSockets | ArgoCD |
 | [`notification-service/`](notification-service/) | Emails customers when their order finishes | ArgoCD |
 | [`web/`](web/) | The storefront at `prastika.aldiab.ai.id`, and the only part the internet reaches | ArgoCD |
-| [`postgresql/`](postgresql/) | Database | `kubectl apply -f apps/ecommerce/postgresql/namespace.yaml`, create the `postgresql-superuser` Secret as below, then `kubectl apply -f apps/ecommerce/postgresql/` |
-| [`rabbitmq/`](rabbitmq/) | Events between services | `kubectl apply -f apps/ecommerce/rabbitmq/namespace.yaml`, create the `rabbitmq-admin` Secret as below, then `kubectl apply -f apps/ecommerce/rabbitmq/` |
-| [`elasticsearch/`](elasticsearch/) | Search index | `kubectl apply -f apps/ecommerce/elasticsearch/namespace.yaml`, create the `elasticsearch-admin` Secret as below, then `kubectl apply -f apps/ecommerce/elasticsearch/` |
-| [`nats/`](nats/) | Signals that an order changed | As below |
-| [`mailpit/`](mailpit/) | Catches the shop's emails, and delivers none | `kubectl apply -f apps/ecommerce/mailpit/namespace.yaml`, then `kubectl apply -f apps/ecommerce/mailpit/` |
+| [`postgresql/`](postgresql/) | Database | ArgoCD, after the `postgresql-superuser` Secret below exists |
+| [`rabbitmq/`](rabbitmq/) | Events between services | ArgoCD, after the `rabbitmq-admin` Secret below exists |
+| [`elasticsearch/`](elasticsearch/) | Search index | ArgoCD, after the `elasticsearch-admin` Secret below exists |
+| [`nats/`](nats/) | Signals that an order changed | ArgoCD, after the Secrets below exist |
+| [`mailpit/`](mailpit/) | Catches the shop's emails, and delivers none | ArgoCD |
 
-The folders applied with ArgoCD all belong to one Application, `ecommerce`, which deploys what [`kustomization.yaml`](kustomization.yaml) lists. The other folders are applied by hand, so that a sync can never touch their data.
+Everything here belongs to one Application in ArgoCD, `ecommerce`, which deploys what [`kustomization.yaml`](kustomization.yaml) lists. Secrets, and what's inside the tools, such as databases, users and vhosts, are created by hand, because this repo is public.
+
+Tools sync before services. ArgoCD never deletes a tool's objects, including its volume and namespace, even if they leave Git or the Application is deleted. To remove a tool, delete its objects with `kubectl`. These folders can't be applied with `kubectl apply -f <folder>`, because each has a `kustomization.yaml`.
+
+ArgoCD does apply a change to a tool as soon as it's merged, and most changes to a StatefulSet restart it. A restart of PostgreSQL or RabbitMQ interrupts every service, so check the diff in a PR first. PostgreSQL has no backup yet, and none of this protects against a failed disk.
 
 ## Deploy the services
 
-Each service keeps its own folder, namespace and image tag. The namespaces are created by hand, because the Secrets below must exist before their service starts:
+Each service keeps its own folder, namespace and image tag. The namespaces are created by hand, because the Secrets below must exist before anything that uses them starts:
 
 ```bash
-for NAMESPACE in catalog search user order payment realtime notification web; do
+for NAMESPACE in postgresql rabbitmq elasticsearch nats mailpit catalog search user order payment realtime notification web; do
   kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 done
 kubectl apply -f k8s/argocd/ecommerce-application.yaml
@@ -45,22 +49,18 @@ Core NATS, with no JetStream and no volume. It keeps no messages, so a restart o
 
 ### Install it with its passwords
 
-Run this once, on AldiServer. The order-service Deployment needs `order-nats`, so run it before ArgoCD syncs that change, or the new Pod waits until the Secret exists:
+Run this once, on AldiServer, before the first sync. Without these Secrets, NATS and the services that use it wait until they exist:
 
 ```bash
-kubectl apply -f apps/ecommerce/nats/namespace.yaml
 ORDER_PASSWORD=$(openssl rand -hex 24)
 REALTIME_PASSWORD=$(openssl rand -hex 24)
 kubectl create secret generic nats-passwords -n nats \
   --from-literal=order="$ORDER_PASSWORD" --from-literal=realtime="$REALTIME_PASSWORD"
 kubectl create secret generic order-nats -n order \
   --from-literal=url="nats://order:$ORDER_PASSWORD@nats.nats.svc:4222"
-kubectl create namespace realtime
 kubectl create secret generic realtime-nats -n realtime \
   --from-literal=url="nats://realtime:$REALTIME_PASSWORD@nats.nats.svc:4222"
 unset ORDER_PASSWORD REALTIME_PASSWORD
-kubectl apply -f apps/ecommerce/nats/
-kubectl rollout status -n nats deploy/nats
 ```
 
 ## Mailpit
@@ -87,7 +87,6 @@ CREATE DATABASE notification OWNER notification;
 SQL
 kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl add_user notification "$MQ_PASSWORD"
 kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl set_permissions -p shop notification '^(notification-service\..*|order\.events)$' '^notification-service\..*$' '^(notification-service\..*|order\.events)$'
-kubectl create namespace notification
 kubectl create secret generic notification-database -n notification \
   --from-literal=url="postgres://notification:$DB_PASSWORD@postgresql.postgresql.svc:5432/notification?sslmode=disable"
 kubectl create secret generic notification-rabbitmq -n notification \
@@ -105,7 +104,7 @@ The Ingress in `web/` routes the domain, but nothing reaches it until Cloudflare
 
 One instance serves every application, each with its own database and role. The data is in `/var/lib/aldi/postgresql` on AldiServer and has no backup yet.
 
-Create the superuser Secret, once, before the first `kubectl apply -f apps/ecommerce/postgresql/`:
+Create the superuser Secret, once, before the first sync:
 
 ```bash
 kubectl create secret generic postgresql-superuser -n postgresql \
@@ -122,7 +121,6 @@ kubectl exec -i -n postgresql postgresql-0 -- psql -U postgres -v ON_ERROR_STOP=
 CREATE ROLE catalog LOGIN PASSWORD :'password';
 CREATE DATABASE catalog OWNER catalog;
 SQL
-kubectl create namespace catalog
 kubectl create secret generic catalog-database -n catalog \
   --from-literal=url="postgres://catalog:$PASSWORD@postgresql.postgresql.svc:5432/catalog?sslmode=disable"
 ```
@@ -137,7 +135,6 @@ kubectl exec -i -n postgresql postgresql-0 -- psql -U postgres -v ON_ERROR_STOP=
 CREATE ROLE user_service LOGIN PASSWORD :'password';
 CREATE DATABASE users OWNER user_service;
 SQL
-kubectl create namespace user
 kubectl create secret generic user-database -n user \
   --from-literal=url="postgres://user_service:$PASSWORD@postgresql.postgresql.svc:5432/users?sslmode=disable"
 unset PASSWORD
@@ -156,7 +153,7 @@ kubectl exec -n postgresql postgresql-0 -- psql -U postgres -d users -c "UPDATE 
 
 One broker carries the events between applications. The data is in `/var/lib/aldi/rabbitmq` on AldiServer. It is only reachable inside the cluster, at `rabbitmq.rabbitmq.svc:5672`.
 
-Create the admin Secret, once, before the first `kubectl apply -f apps/ecommerce/rabbitmq/`. RabbitMQ only reads this password when its data folder is empty, so changing the Secret later doesn't change the password:
+Create the admin Secret, once, before the first sync. RabbitMQ only reads this password when its data folder is empty, so changing the Secret later doesn't change the password:
 
 ```bash
 kubectl create secret generic rabbitmq-admin -n rabbitmq \
@@ -191,7 +188,6 @@ CREATE ROLE :"app" LOGIN PASSWORD :'password';
 CREATE DATABASE :"app" OWNER :"app";
 SQL
   kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl add_user "$APP" "$MQ_PASSWORD"
-  kubectl create namespace "$APP"
   kubectl create secret generic "$APP-database" -n "$APP" \
     --from-literal=url="postgres://$APP:$DB_PASSWORD@postgresql.postgresql.svc:5432/$APP?sslmode=disable"
   kubectl create secret generic "$APP-rabbitmq" -n "$APP" \
@@ -215,7 +211,7 @@ kubectl get secret rabbitmq-admin -n rabbitmq -o jsonpath='{.data.password}' | b
 
 One node holds the search index. The data is in `/var/lib/aldi/elasticsearch` on AldiServer, and it can be rebuilt from the catalog. It is only reachable inside the cluster, at `elasticsearch.elasticsearch.svc:9200`.
 
-Create the admin Secret, once, before the first `kubectl apply -f apps/ecommerce/elasticsearch/`. Unlike RabbitMQ, a changed password takes effect when the Pod restarts:
+Create the admin Secret, once, before the first sync. Unlike RabbitMQ, a changed password takes effect when the Pod restarts:
 
 ```bash
 kubectl create secret generic elasticsearch-admin -n elasticsearch \
@@ -236,7 +232,6 @@ kubectl exec -n elasticsearch elasticsearch-0 -- curl -sS -u "elastic:$ADMIN" -X
   -H 'Content-Type: application/json' -d "{\"password\":\"$ES_PASSWORD\",\"roles\":[\"search_service\"]}"
 kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl add_user search "$MQ_PASSWORD"
 kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl set_permissions -p shop search '^(search-service\..*|catalog\.events)$' '^search-service\..*$' '^(search-service\..*|catalog\.events)$'
-kubectl create namespace search
 kubectl create secret generic search-service -n search \
   --from-literal=elasticsearch-url="http://search_service:$ES_PASSWORD@elasticsearch.elasticsearch.svc:9200" \
   --from-literal=rabbitmq-url="amqp://search:$MQ_PASSWORD@rabbitmq.rabbitmq.svc:5672/shop"

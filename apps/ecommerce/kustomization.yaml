@@ -2,8 +2,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 # Everything the ecommerce Application in ArgoCD deploys. A new service only needs a line here.
-# The tools in this folder are applied by hand, so that a sync can never touch their data.
 resources:
+  - postgresql
+  - rabbitmq
+  - elasticsearch
+  - nats
+  - mailpit
   - catalog-service
   - search-service
   - user-service
@@ -12,3 +16,19 @@ resources:
   - realtime-service
   - notification-service
   - web
+
+# Tools start before the services that need them. ArgoCD never deletes these objects, even if
+# they leave Git or the Application is deleted, because their data can't be rebuilt from Git.
+# A new tool needs its name added here. This only changes the objects' own annotations, so it
+# doesn't restart any Pod.
+patches:
+  - target:
+      name: (postgresql|rabbitmq|elasticsearch|nats|mailpit)(-.*)?
+    patch: |-
+      apiVersion: v1
+      kind: Protected
+      metadata:
+        name: protected
+        annotations:
+          argocd.argoproj.io/sync-wave: "-1"
+          argocd.argoproj.io/sync-options: Prune=false,Delete=false

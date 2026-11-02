@@ -11,4 +11,4 @@ Configuration for the single-node kubeadm cluster on AldiServer.
 | [`argocd/ecommerce-application.yaml`](argocd/ecommerce-application.yaml) | `kubectl apply -f k8s/argocd/ecommerce-application.yaml` (once, after [the shop's namespaces and Secrets exist](../apps/ecommerce/README.md#deploy-the-services)) |
 | [`cloudflared/`](cloudflared/) | `kubectl apply -f k8s/cloudflared/namespace.yaml`, create the `cloudflared-token` Secret, then `kubectl apply -f k8s/cloudflared/deployment.yaml` |
 
-These files are applied by hand. ArgoCD has two Applications: `cv` for [`apps/cvaldi/`](../apps/cvaldi/), and `ecommerce` for every microservice in [`apps/ecommerce/`](../apps/ecommerce/).
+These files are applied by hand. ArgoCD has two Applications: `cv` for [`apps/cvaldi/`](../apps/cvaldi/), and `ecommerce` for every microservice and tool in [`apps/ecommerce/`](../apps/ecommerce/).
