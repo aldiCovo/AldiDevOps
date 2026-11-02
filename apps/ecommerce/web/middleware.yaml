@@ -37,3 +37,16 @@ spec:
     burst: 30
     sourceCriterion:
       requestHeaderName: Cf-Connecting-Ip
+---
+# Each change to a cart writes to the database, so changing it gets a limit of its own.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: cart-rate-limit
+spec:
+  rateLimit:
+    average: 120
+    period: 1m
+    burst: 60
+    sourceCriterion:
+      requestHeaderName: Cf-Connecting-Ip

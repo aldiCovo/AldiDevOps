@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart-service
+  labels:
+    app: cart-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cart-service
+  template:
+    metadata:
+      labels:
+        app: cart-service
+    spec:
+      containers:
+        - name: cart-service
+          image: ghcr.io/aldicovo/cart-service
+          ports:
+            - containerPort: 8080
+          env:
+            # The Secret is created by hand so the password never enters this public repo.
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: cart-database
+                  key: url
+            - name: USER_URL
+              value: http://user-service.user.svc:8080
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi

@@ -30,6 +30,8 @@ spec:
               value: http://order-service.order.svc:8080
             - name: REALTIME_URL
               value: http://realtime-service.realtime.svc:8080
+            - name: CART_URL
+              value: http://cart-service.cart.svc:8080
           readinessProbe:
             httpGet:
               path: /healthz
