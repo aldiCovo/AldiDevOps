@@ -1,0 +1,74 @@
+# Catches every email and delivers none, so a public shop can't send mail to strangers.
+# No Ingress, because the inbox shows customers' addresses. See the README for opening it.
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailpit
+  namespace: mailpit
+spec:
+  selector:
+    app: mailpit
+  ports:
+    - name: smtp
+      port: 1025
+      targetPort: 1025
+    - name: web
+      port: 8025
+      targetPort: 8025
+---
+# No volume: these are test emails, and the order status stays in PostgreSQL.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailpit
+  namespace: mailpit
+  labels:
+    app: mailpit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mailpit
+  template:
+    metadata:
+      labels:
+        app: mailpit
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: mailpit
+          image: axllent/mailpit:v1.33.0
+          ports:
+            - containerPort: 1025
+            - containerPort: 8025
+          env:
+            # Older emails are deleted, so visitors can't fill the disk.
+            - name: MP_MAX_MESSAGES
+              value: "500"
+            - name: MP_DISABLE_VERSION_CHECK
+              value: "true"
+            - name: TMPDIR
+              value: /data
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8025
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: 8025
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      volumes:
+        - name: data
+          emptyDir:
+            sizeLimit: 256Mi
