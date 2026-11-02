@@ -1,0 +1,33 @@
+# kubeadm has no storage provisioner, so this claim binds to a folder on AldiServer's disk.
+# The photos live there rather than in the image, so they survive restarts and new images,
+# and can change without a build. Retain keeps the folder if the claim is ever deleted.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: web-photos
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  claimRef:
+    namespace: web
+    name: web-photos
+  hostPath:
+    path: /var/lib/aldi/photos
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: web-photos
+  namespace: web
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  volumeName: web-photos
+  resources:
+    requests:
+      storage: 1Gi

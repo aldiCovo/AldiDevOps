@@ -4,6 +4,7 @@ kind: Kustomization
 namespace: web
 
 resources:
+  - storage.yaml
   - deployment.yaml
   - service.yaml
   - middleware.yaml
