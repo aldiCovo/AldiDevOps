@@ -32,6 +32,12 @@ spec:
               value: http://realtime-service.realtime.svc:8080
             - name: CART_URL
               value: http://cart-service.cart.svc:8080
+            - name: PHOTOS_DIR
+              value: /photos
+          volumeMounts:
+            - name: photos
+              mountPath: /photos
+              readOnly: true
           readinessProbe:
             httpGet:
               path: /healthz
@@ -46,3 +52,8 @@ spec:
               memory: 16Mi
             limits:
               memory: 64Mi
+      volumes:
+        - name: photos
+          persistentVolumeClaim:
+            claimName: web-photos
+            readOnly: true
