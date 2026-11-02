@@ -1,20 +1,20 @@
+# One Application for every microservice of the shop. Each service sets its own namespace in its
+# kustomization.yaml. They are created by hand, because their Secrets must exist first, and
+# because a namespace owned by ArgoCD could take those Secrets with it.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: user-service
+  name: ecommerce
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/aldiCovo/AldiDevOps.git
     targetRevision: main
-    path: apps/ecommerce/user-service
+    path: apps/ecommerce
   destination:
     server: https://kubernetes.default.svc
-    namespace: user
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
