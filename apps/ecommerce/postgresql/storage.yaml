@@ -10,7 +10,6 @@ spec:
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: ""
   claimRef:
     namespace: postgresql
     name: postgresql-data
