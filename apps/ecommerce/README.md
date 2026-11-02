@@ -10,11 +10,13 @@ Everything for the shop, with one folder per service and per tool it uses.
 | [`order-service/`](order-service/) | Orders, and the saga that reserves stock and takes payment | ArgoCD |
 | [`payment-service/`](payment-service/) | Payments, simulated for now | ArgoCD |
 | [`realtime-service/`](realtime-service/) | Tells browsers when an order changes, over WebSockets | ArgoCD |
+| [`notification-service/`](notification-service/) | Emails customers when their order finishes | ArgoCD |
 | [`web/`](web/) | The storefront at `prastika.aldiab.ai.id`, and the only part the internet reaches | ArgoCD |
 | [`postgresql/`](postgresql/) | Database | `kubectl apply -f apps/ecommerce/postgresql/namespace.yaml`, create the `postgresql-superuser` Secret as below, then `kubectl apply -f apps/ecommerce/postgresql/` |
 | [`rabbitmq/`](rabbitmq/) | Events between services | `kubectl apply -f apps/ecommerce/rabbitmq/namespace.yaml`, create the `rabbitmq-admin` Secret as below, then `kubectl apply -f apps/ecommerce/rabbitmq/` |
 | [`elasticsearch/`](elasticsearch/) | Search index | `kubectl apply -f apps/ecommerce/elasticsearch/namespace.yaml`, create the `elasticsearch-admin` Secret as below, then `kubectl apply -f apps/ecommerce/elasticsearch/` |
 | [`nats/`](nats/) | Signals that an order changed | As below |
+| [`mailpit/`](mailpit/) | Catches the shop's emails, and delivers none | `kubectl apply -f apps/ecommerce/mailpit/namespace.yaml`, then `kubectl apply -f apps/ecommerce/mailpit/` |
 
 The ArgoCD Applications are in [`k8s/argocd/`](../../k8s/argocd/). The other folders are applied by hand.
 
@@ -40,6 +42,40 @@ kubectl create secret generic realtime-nats -n realtime \
 unset ORDER_PASSWORD REALTIME_PASSWORD
 kubectl apply -f apps/ecommerce/nats/
 kubectl rollout status -n nats deploy/nats
+```
+
+## Mailpit
+
+It catches every email and delivers none, so the shop can't send mail to strangers. It keeps the newest 500, and loses them when its Pod restarts.
+
+To read them, run this on AldiServer, then browse to `http://localhost:8025` through an SSH tunnel. It has no Ingress and no login, because it shows customers' addresses, so never expose it:
+
+```bash
+kubectl port-forward -n mailpit svc/mailpit 8025:8025
+```
+
+### Add the database, user and tokens for notification-service
+
+Run this once, on AldiServer. The user-service Deployment needs `user-internal-token`, so run it before ArgoCD syncs that change, or the new Pod waits until the Secret exists:
+
+```bash
+DB_PASSWORD=$(openssl rand -hex 24)
+MQ_PASSWORD=$(openssl rand -hex 24)
+TOKEN=$(openssl rand -hex 32)
+kubectl exec -i -n postgresql postgresql-0 -- psql -U postgres -v ON_ERROR_STOP=1 -v password="$DB_PASSWORD" <<'SQL'
+CREATE ROLE notification LOGIN PASSWORD :'password';
+CREATE DATABASE notification OWNER notification;
+SQL
+kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl add_user notification "$MQ_PASSWORD"
+kubectl exec -n rabbitmq rabbitmq-0 -- rabbitmqctl set_permissions -p shop notification '^(notification-service\..*|order\.events)$' '^notification-service\..*$' '^(notification-service\..*|order\.events)$'
+kubectl create namespace notification
+kubectl create secret generic notification-database -n notification \
+  --from-literal=url="postgres://notification:$DB_PASSWORD@postgresql.postgresql.svc:5432/notification?sslmode=disable"
+kubectl create secret generic notification-rabbitmq -n notification \
+  --from-literal=url="amqp://notification:$MQ_PASSWORD@rabbitmq.rabbitmq.svc:5672/shop"
+kubectl create secret generic notification-user-token -n notification --from-literal=token="$TOKEN"
+kubectl create secret generic user-internal-token -n user --from-literal=token="$TOKEN"
+unset DB_PASSWORD MQ_PASSWORD TOKEN
 ```
 
 ## Open the shop to the internet

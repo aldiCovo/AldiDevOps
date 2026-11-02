@@ -31,6 +31,11 @@ spec:
                 secretKeyRef:
                   name: user-service-jwt
                   key: private-key
+            - name: INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: user-internal-token
+                  key: token
             # Password hashes make a lot of garbage, so Go must collect it before the limit below.
             - name: GOMEMLIMIT
               value: 200MiB
