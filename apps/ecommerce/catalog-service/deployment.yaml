@@ -31,6 +31,12 @@ spec:
                 secretKeyRef:
                   name: catalog-rabbitmq
                   key: url
+            # Every change needs this token. Only admin-service has it.
+            - name: INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-internal-token
+                  key: token
           readinessProbe:
             httpGet:
               path: /readyz
