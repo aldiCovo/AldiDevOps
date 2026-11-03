@@ -136,6 +136,10 @@ kubectl run stock-fix -n catalog --rm -i --restart=Never --image=curlimages/curl
 unset TOKEN
 ```
 
+### Photos
+
+The shop's photos live in `/var/lib/aldi/photos` on AldiServer, outside any image. web reads them through the `web-photos` volume, read-only, and admin-service writes them through `admin-photos`, a second volume on the same folder, when an admin uploads a photo. admin-service runs as uid 1000, which owns `categories/` and `products/`, so nothing needs `sudo`. If those folders are ever made again by another user, give them back with `sudo chown -R 1000:1000 /var/lib/aldi/photos/categories /var/lib/aldi/photos/products`. SELinux is permissive on AldiServer; if it's ever made enforcing, the folder needs the `container_file_t` label for admin-service to write there.
+
 ## Open the shop to the internet
 
 The Ingress in `web/` routes the domain, but nothing reaches it until Cloudflare knows about it. In the Cloudflare dashboard, add a Public Hostname to the tunnel: `prastika.aldiab.ai.id`, type `HTTP`, service `traefik.traefik.svc.cluster.local:80`.

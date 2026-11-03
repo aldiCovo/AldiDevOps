@@ -1,0 +1,34 @@
+# The same folder on AldiServer's disk as web's photos (apps/ecommerce/web/storage.yaml), so
+# a photo the admin pages upload shows in the shop at once. web mounts it read-only; only
+# admin-service writes. The folder already exists and belongs to uid 1000, which the
+# Deployment runs as, so no one needs to change its owner.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: admin-photos
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  claimRef:
+    namespace: admin
+    name: admin-photos
+  hostPath:
+    path: /var/lib/aldi/photos
+    type: Directory
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: admin-photos
+  namespace: admin
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  volumeName: admin-photos
+  resources:
+    requests:
+      storage: 1Gi

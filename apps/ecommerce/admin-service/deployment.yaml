@@ -14,6 +14,11 @@ spec:
       labels:
         app: admin-service
     spec:
+      # The owner of the photos folder on AldiServer, so admin-service can write there.
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
       containers:
         - name: admin-service
           image: ghcr.io/aldicovo/admin-service
@@ -42,6 +47,14 @@ spec:
                 secretKeyRef:
                   name: admin-catalog-token
                   key: token
+            - name: PHOTOS_DIR
+              value: /photos
+          volumeMounts:
+            - name: photos
+              mountPath: /photos
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
           readinessProbe:
             httpGet:
               path: /healthz
@@ -56,3 +69,7 @@ spec:
               memory: 16Mi
             limits:
               memory: 64Mi
+      volumes:
+        - name: photos
+          persistentVolumeClaim:
+            claimName: admin-photos

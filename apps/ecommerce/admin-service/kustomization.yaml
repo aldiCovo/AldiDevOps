@@ -6,6 +6,7 @@ namespace: admin
 resources:
   - deployment.yaml
   - service.yaml
+  - storage.yaml
 
 # build.sh in aldiCovo/AldiApps writes newTag, the commit the image was built from.
 images:
