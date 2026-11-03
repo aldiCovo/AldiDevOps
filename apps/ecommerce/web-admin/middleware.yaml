@@ -1,0 +1,13 @@
+# Limits password guessing on the admin login. Everything reaches Traefik from cloudflared, so
+# the visitor's address must come from the header Cloudflare sets.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: login-rate-limit
+spec:
+  rateLimit:
+    average: 10
+    period: 1m
+    burst: 10
+    sourceCriterion:
+      requestHeaderName: Cf-Connecting-Ip

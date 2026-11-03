@@ -1,0 +1,40 @@
+# The admin pages share the shop's domain under /admin. Traefik picks the longest matching
+# path, so these win over web's "/" and the shop never sees /admin.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web-admin
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: prastika.aldiab.ai.id
+      http:
+        paths:
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: web-admin
+                port:
+                  number: 8080
+---
+# Separate from the Ingress above, because a middleware applies to a whole Ingress.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web-admin-login
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: web-admin-login-rate-limit@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: prastika.aldiab.ai.id
+      http:
+        paths:
+          - path: /admin/api/login
+            pathType: Exact
+            backend:
+              service:
+                name: web-admin
+                port:
+                  number: 8080

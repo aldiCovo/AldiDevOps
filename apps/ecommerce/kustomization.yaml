@@ -17,6 +17,8 @@ resources:
   - notification-service
   - cart-service
   - web
+  - admin-service
+  - web-admin
 
 # Tools start before the services that need them. ArgoCD never deletes these objects, even if
 # they leave Git or the Application is deleted, because their data can't be rebuilt from Git.
