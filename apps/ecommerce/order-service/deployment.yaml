@@ -40,6 +40,12 @@ spec:
               value: http://catalog-service.catalog.svc:8080
             - name: USER_URL
               value: http://user-service.user.svc:8080
+            # Lets admin-service use the /internal routes.
+            - name: INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: order-internal-token
+                  key: token
           readinessProbe:
             httpGet:
               path: /readyz

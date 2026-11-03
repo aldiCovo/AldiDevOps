@@ -12,7 +12,9 @@ Everything for the shop, with one folder per service and per tool it uses.
 | [`realtime-service/`](realtime-service/) | Tells browsers when an order changes, over WebSockets | ArgoCD |
 | [`notification-service/`](notification-service/) | Emails customers when their order finishes | ArgoCD |
 | [`cart-service/`](cart-service/) | Keeps each customer's cart on their account | ArgoCD |
-| [`web/`](web/) | The storefront at `prastika.aldiab.ai.id`, and the only part the internet reaches | ArgoCD |
+| [`web/`](web/) | The storefront at `prastika.aldiab.ai.id` | ArgoCD |
+| [`admin-service/`](admin-service/) | Lets admins in and calls the other services' internal routes for them | ArgoCD, after the Secrets in [Add the tokens for the admin pages](#add-the-tokens-for-the-admin-pages) exist |
+| [`web-admin/`](web-admin/) | The admin pages at `prastika.aldiab.ai.id/admin`, with their own login | ArgoCD |
 | [`postgresql/`](postgresql/) | Database | ArgoCD, after the `postgresql-superuser` Secret below exists |
 | [`rabbitmq/`](rabbitmq/) | Events between services | ArgoCD, after the `rabbitmq-admin` Secret below exists |
 | [`elasticsearch/`](elasticsearch/) | Search index | ArgoCD, after the `elasticsearch-admin` Secret below exists |
@@ -30,7 +32,7 @@ ArgoCD does apply a change to a tool as soon as it's merged, and most changes to
 Each service keeps its own folder, namespace and image tag. The namespaces are created by hand, because the Secrets below must exist before anything that uses them starts:
 
 ```bash
-for NAMESPACE in postgresql rabbitmq elasticsearch nats mailpit catalog search user order payment realtime notification cart web; do
+for NAMESPACE in postgresql rabbitmq elasticsearch nats mailpit catalog search user order payment realtime notification cart web admin web-admin; do
   kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 done
 kubectl apply -f k8s/argocd/ecommerce-application.yaml
@@ -97,6 +99,24 @@ kubectl create secret generic user-internal-token -n user --from-literal=token="
 unset DB_PASSWORD MQ_PASSWORD TOKEN
 ```
 
+### Add the tokens for the admin pages
+
+Run this once, on AldiServer, before ArgoCD syncs the admin services. admin-service asks user-service with the token notification-service already uses, and order-service with a new one. The order-service Deployment needs `order-internal-token`, so until it exists the new order-service Pod waits and the old one keeps serving:
+
+```bash
+for NAMESPACE in admin web-admin; do
+  kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+done
+USER_TOKEN=$(kubectl get secret user-internal-token -n user -o jsonpath='{.data.token}' | base64 -d)
+ORDER_TOKEN=$(openssl rand -hex 32)
+kubectl create secret generic admin-user-token -n admin --from-literal=token="$USER_TOKEN"
+kubectl create secret generic admin-order-token -n admin --from-literal=token="$ORDER_TOKEN"
+kubectl create secret generic order-internal-token -n order --from-literal=token="$ORDER_TOKEN"
+unset USER_TOKEN ORDER_TOKEN
+```
+
+Then make an account an admin, as in [Make a user an admin](#make-a-user-an-admin), and log in at `/admin`.
+
 ## Open the shop to the internet
 
 The Ingress in `web/` routes the domain, but nothing reaches it until Cloudflare knows about it. In the Cloudflare dashboard, add a Public Hostname to the tunnel: `prastika.aldiab.ai.id`, type `HTTP`, service `traefik.traefik.svc.cluster.local:80`.
@@ -160,7 +180,7 @@ openssl genpkey -algorithm ed25519 | kubectl create secret generic user-service-
 
 ### Make a user an admin
 
-New accounts are customers, and the API can't change that. Run this on AldiServer. The new role reaches tokens at the user's next login:
+New accounts are customers, and the API can't change that. Run this on AldiServer. admin-service checks the role with user-service on every request, so the change applies at once, also for taking the role away:
 
 ```bash
 kubectl exec -n postgresql postgresql-0 -- psql -U postgres -d users -c "UPDATE users SET role = 'admin', updated_at = now() WHERE email = 'name@example.com'"

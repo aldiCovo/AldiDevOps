@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-service
+  labels:
+    app: admin-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-service
+  template:
+    metadata:
+      labels:
+        app: admin-service
+    spec:
+      containers:
+        - name: admin-service
+          image: ghcr.io/aldicovo/admin-service
+          ports:
+            - containerPort: 8080
+          env:
+            - name: USER_URL
+              value: http://user-service.user.svc:8080
+            - name: ORDER_URL
+              value: http://order-service.order.svc:8080
+            # The Secrets are created by hand so the tokens never enter this public repo.
+            - name: USER_INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: admin-user-token
+                  key: token
+            - name: ORDER_INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: admin-order-token
+                  key: token
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi

@@ -1,0 +1,11 @@
+# No Ingress: the internet only reaches this through web-admin.
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-service
+spec:
+  selector:
+    app: admin-service
+  ports:
+    - port: 8080
+      targetPort: 8080
