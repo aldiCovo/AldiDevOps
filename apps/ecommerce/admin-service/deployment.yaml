@@ -47,6 +47,11 @@ spec:
                 secretKeyRef:
                   name: admin-catalog-token
                   key: token
+            - name: USER_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: admin-user-admin-token
+                  key: token
             - name: PHOTOS_DIR
               value: /photos
           volumeMounts:
