@@ -136,6 +136,15 @@ kubectl run stock-fix -n catalog --rm -i --restart=Never --image=curlimages/curl
 unset TOKEN
 ```
 
+For the *Pengguna* page, user-service gets a second token that lists accounts and changes roles, and only admin-service has it, so the token notification-service uses can't make anyone an admin. Run this before ArgoCD syncs that change. Until both Secrets exist, the new user-service and admin-service Pods wait and the old ones keep serving:
+
+```bash
+USER_ADMIN_TOKEN=$(openssl rand -hex 32)
+kubectl create secret generic admin-user-admin-token -n admin --from-literal=token="$USER_ADMIN_TOKEN"
+kubectl create secret generic user-admin-token -n user --from-literal=token="$USER_ADMIN_TOKEN"
+unset USER_ADMIN_TOKEN
+```
+
 ### Photos
 
 The shop's photos live in `/var/lib/aldi/photos` on AldiServer, outside any image. web reads them through the `web-photos` volume, read-only, and admin-service writes them through `admin-photos`, a second volume on the same folder, when an admin uploads a photo. admin-service runs as uid 1000, which owns `categories/` and `products/`, so nothing needs `sudo`. If those folders are ever made again by another user, give them back with `sudo chown -R 1000:1000 /var/lib/aldi/photos/categories /var/lib/aldi/photos/products`. SELinux is permissive on AldiServer; if it's ever made enforcing, the folder needs the `container_file_t` label for admin-service to write there.
@@ -203,7 +212,7 @@ openssl genpkey -algorithm ed25519 | kubectl create secret generic user-service-
 
 ### Make a user an admin
 
-New accounts are customers, and the API can't change that. Run this on AldiServer. admin-service checks the role with user-service on every request, so the change applies at once, also for taking the role away:
+New accounts are customers. An admin can make another account an admin, or take the role away, on the *Pengguna* page at `/admin/#pengguna`. The first admin, or one locked out, is made by hand on AldiServer. admin-service checks the role with user-service on every request, so a change applies at once, also for taking the role away:
 
 ```bash
 kubectl exec -n postgresql postgresql-0 -- psql -U postgres -d users -c "UPDATE users SET role = 'admin', updated_at = now() WHERE email = 'name@example.com'"

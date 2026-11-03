@@ -36,6 +36,12 @@ spec:
                 secretKeyRef:
                   name: user-internal-token
                   key: token
+            # Lists accounts and changes roles; only admin-service has it.
+            - name: ADMIN_INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: user-admin-token
+                  key: token
             # Password hashes make a lot of garbage, so Go must collect it before the limit below.
             - name: GOMEMLIMIT
               value: 200MiB
