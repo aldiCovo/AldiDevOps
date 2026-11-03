@@ -24,6 +24,8 @@ spec:
               value: http://user-service.user.svc:8080
             - name: ORDER_URL
               value: http://order-service.order.svc:8080
+            - name: CATALOG_URL
+              value: http://catalog-service.catalog.svc:8080
             # The Secrets are created by hand so the tokens never enter this public repo.
             - name: USER_INTERNAL_TOKEN
               valueFrom:
@@ -34,6 +36,11 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: admin-order-token
+                  key: token
+            - name: CATALOG_INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: admin-catalog-token
                   key: token
           readinessProbe:
             httpGet:

@@ -117,6 +117,25 @@ unset USER_TOKEN ORDER_TOKEN
 
 Then make an account an admin, as in [Make a user an admin](#make-a-user-an-admin), and log in at `/admin`.
 
+For the *Produk* page, admin-service also needs catalog-service's token, and catalog-service refuses every change without it. Run this before ArgoCD syncs that change. Until both Secrets exist, the new catalog-service and admin-service Pods wait and the old ones keep serving:
+
+```bash
+CATALOG_TOKEN=$(openssl rand -hex 32)
+kubectl create secret generic admin-catalog-token -n admin --from-literal=token="$CATALOG_TOKEN"
+kubectl create secret generic catalog-internal-token -n catalog --from-literal=token="$CATALOG_TOKEN"
+unset CATALOG_TOKEN
+```
+
+To change stock by hand, for example after a test order, send the change with that token:
+
+```bash
+TOKEN=$(kubectl get secret catalog-internal-token -n catalog -o jsonpath='{.data.token}' | base64 -d)
+kubectl run stock-fix -n catalog --rm -i --restart=Never --image=curlimages/curl -- \
+  -s -X PATCH -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"delta":1}' http://catalog-service.catalog.svc:8080/variants/1/stock
+unset TOKEN
+```
+
 ## Open the shop to the internet
 
 The Ingress in `web/` routes the domain, but nothing reaches it until Cloudflare knows about it. In the Cloudflare dashboard, add a Public Hostname to the tunnel: `prastika.aldiab.ai.id`, type `HTTP`, service `traefik.traefik.svc.cluster.local:80`.
