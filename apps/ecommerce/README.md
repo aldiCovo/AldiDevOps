@@ -162,9 +162,13 @@ The Ingress in `web/` routes the domain, but nothing reaches it until Cloudflare
 | node-exporter | AldiServer's CPU, memory, disks and network. It shares the server's network, so it listens on port 9100 of the server |
 | kube-state-metrics | Which Pods are ready, restarts and why a container last stopped, and Deployments missing replicas |
 | kubelet and cAdvisor | Each container's CPU and memory, read through the kubelet with Prometheus's ServiceAccount |
+| The shop's services | Requests, errors, latency and Go's memory, from each service's `/metrics` on port 9091, found through their Pods' `prometheus.io` annotations |
+| RabbitMQ | Each queue's waiting and unacknowledged messages and its consumers, from the plugin on port 15692 |
+| nats-exporter | NATS connections and messages, from NATS's monitoring port 8222 |
+| postgres-exporter | Connections, commits and size of each database, logged in as the `monitoring` role |
 | Grafana | The dashboards at `https://grafana.aldiab.ai.id`, with only an `admin` login. Its users and settings are in `/var/lib/aldi/grafana` |
 
-The dashboards **Server** and **Kubernetes**, in the AldiServer folder, come from [`monitoring/dashboards/`](monitoring/dashboards/) and can't be changed in Grafana's pages. To change one, edit its JSON in a PR. A dashboard made in Grafana is kept in its database instead.
+The dashboards **Server**, **Kubernetes** and **Toko**, in the AldiServer folder, come from [`monitoring/dashboards/`](monitoring/dashboards/) and can't be changed in Grafana's pages. To change one, edit its JSON in a PR. A dashboard made in Grafana is kept in its database instead.
 
 A Pod with the annotations `prometheus.io/scrape: "true"` and `prometheus.io/port` is read automatically, at `prometheus.io/path` or `/metrics`.
 
@@ -187,6 +191,21 @@ unset GRAFANA_PASSWORD
 ```
 
 If the password is lost, reset it with `kubectl exec -n monitoring deploy/grafana -- grafana cli admin reset-admin-password '<new password>'`.
+
+### Add the PostgreSQL login for postgres-exporter
+
+Run this once, on AldiServer, before ArgoCD syncs postgres-exporter, or its Pod waits until the Secret exists. `pg_monitor` can read PostgreSQL's statistics, but no table:
+
+```bash
+DB_PASSWORD=$(openssl rand -hex 24)
+kubectl exec -i -n postgresql postgresql-0 -- psql -U postgres -v ON_ERROR_STOP=1 -v password="$DB_PASSWORD" <<'SQL'
+CREATE ROLE monitoring LOGIN PASSWORD :'password';
+GRANT pg_monitor TO monitoring;
+SQL
+kubectl create secret generic postgres-exporter -n monitoring \
+  --from-literal=url="postgres://monitoring:$DB_PASSWORD@postgresql.postgresql.svc:5432/postgres?sslmode=disable"
+unset DB_PASSWORD
+```
 
 ### Open Grafana to the internet
 

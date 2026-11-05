@@ -1,0 +1,101 @@
+# NATS serves its numbers as JSON on port 8222. This turns them into Prometheus metrics.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nats-exporter
+  namespace: monitoring
+  labels:
+    app: nats-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nats-exporter
+  template:
+    metadata:
+      labels:
+        app: nats-exporter
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      containers:
+        - name: nats-exporter
+          image: natsio/prometheus-nats-exporter:0.20.3
+          args: ["-varz", "-connz", "-subz", "-port", "7777", "http://nats.nats.svc:8222"]
+          ports:
+            - containerPort: 7777
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nats-exporter
+  namespace: monitoring
+spec:
+  selector:
+    app: nats-exporter
+  ports:
+    - port: 7777
+      targetPort: 7777
+---
+# Logs in to PostgreSQL as the monitoring role, which can read statistics but no table.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-exporter
+  namespace: monitoring
+  labels:
+    app: postgres-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-exporter
+  template:
+    metadata:
+      labels:
+        app: postgres-exporter
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      containers:
+        - name: postgres-exporter
+          image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
+          args:
+            # Database sizes and per-database statistics, on top of the defaults.
+            - --collector.database
+            - --collector.stat_database
+          env:
+            # The Secret is created by hand so the password never enters this public repo.
+            - name: DATA_SOURCE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-exporter
+                  key: url
+          ports:
+            - containerPort: 9187
+          resources:
+            requests:
+              cpu: 10m
+              memory: 24Mi
+            limits:
+              memory: 96Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-exporter
+  namespace: monitoring
+spec:
+  selector:
+    app: postgres-exporter
+  ports:
+    - port: 9187
+      targetPort: 9187
