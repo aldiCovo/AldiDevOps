@@ -65,6 +65,10 @@ scrape_configs:
       - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
         regex: "true"
         action: keep
+      # MetalLB has these annotations, but serves its metrics over HTTPS behind a login.
+      - source_labels: [__meta_kubernetes_namespace]
+        regex: metallb-system
+        action: drop
       - source_labels: [__meta_kubernetes_pod_phase]
         regex: Running
         action: keep

@@ -75,11 +75,12 @@ spec:
               port: 3000
             initialDelaySeconds: 30
           resources:
+            # It used 310Mi of a 384Mi limit right after its first start.
             requests:
               cpu: 50m
-              memory: 128Mi
+              memory: 256Mi
             limits:
-              memory: 384Mi
+              memory: 512Mi
           volumeMounts:
             - name: data
               mountPath: /var/lib/grafana
