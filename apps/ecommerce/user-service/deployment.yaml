@@ -42,6 +42,14 @@ spec:
                 secretKeyRef:
                   name: user-admin-token
                   key: token
+            # Reset links go out through Mailpit, which catches every email and delivers none.
+            - name: SMTP_ADDR
+              value: mailpit.mailpit.svc:1025
+            - name: MAIL_FROM
+              value: Prastika <no-reply@prastika.aldiab.ai.id>
+            # The start of each reset link.
+            - name: SHOP_URL
+              value: https://prastika.aldiab.ai.id
             # Password hashes make a lot of garbage, so Go must collect it before the limit below.
             - name: GOMEMLIMIT
               value: 200MiB
