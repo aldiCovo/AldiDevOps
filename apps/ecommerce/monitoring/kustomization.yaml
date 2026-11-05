@@ -9,6 +9,7 @@ resources:
   - kube-state-metrics.yaml
   - grafana.yaml
   - exporters.yaml
+  - alertmanager.yaml
 
 # Each name gets a hash of its files, so a change restarts the Pod that reads them.
 # Prometheus and Grafana sync in wave -1 with the other tools, so the files they mount must
@@ -21,6 +22,15 @@ configMapGenerator:
     namespace: monitoring
     files:
       - prometheus.yml
+  - name: alert-rules
+    namespace: monitoring
+    files:
+      - alert-rules.yml
+  - name: alertmanager-config
+    namespace: monitoring
+    files:
+      - alertmanager.yml
+      - telegram.tmpl
   - name: datasources
     namespace: monitoring
     files:

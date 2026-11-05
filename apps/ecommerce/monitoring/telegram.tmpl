@@ -1,0 +1,7 @@
+{{/* One Telegram message for a group of alerts. Sent as HTML, so text from labels is escaped. */}}
+{{ define "telegram.aldi" -}}
+{{ if eq .Status "firing" }}🔴 <b>{{ .CommonLabels.alertname | html }}</b> ({{ .CommonLabels.severity | html }}){{ else }}✅ <b>Pulih: {{ .CommonLabels.alertname | html }}</b>{{ end }}
+{{ range .Alerts -}}
+{{ if eq .Status "firing" }}• {{ else }}• (pulih) {{ end }}{{ .Annotations.summary | html }}
+{{ end -}}
+{{ end }}

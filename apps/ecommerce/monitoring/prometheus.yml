@@ -4,6 +4,15 @@ global:
   scrape_interval: 30s
   evaluation_interval: 30s
 
+# When to raise an alert. The rules come from alert-rules.yml through their own ConfigMap.
+rule_files:
+  - /etc/prometheus-rules/*.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: [alertmanager.monitoring.svc:9093]
+
 scrape_configs:
   - job_name: prometheus
     static_configs:
@@ -58,6 +67,11 @@ scrape_configs:
 
   # Queues, messages and connections. The plugin is on in RabbitMQ's image, and per-object
   # gives each queue its own numbers, which is what shows a backlog.
+  # Alertmanager's own numbers, such as notifications that failed to send.
+  - job_name: alertmanager
+    static_configs:
+      - targets: [alertmanager.monitoring.svc:9093]
+
   - job_name: rabbitmq
     metrics_path: /metrics/per-object
     static_configs:

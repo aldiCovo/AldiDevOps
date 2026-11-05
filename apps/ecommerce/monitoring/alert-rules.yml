@@ -1,0 +1,160 @@
+# When something on AldiServer needs a person. Prometheus checks these every 30 seconds and
+# hands firing alerts to Alertmanager, which sends them to Telegram.
+#
+# Every alert carries a severity ("critical": the shop or a tool is down or about to be;
+# "warning": worth a look today) and a summary in Bahasa Indonesia, which is the Telegram text.
+# Summaries are plain text: the message is sent as HTML, so they must not contain < or >.
+groups:
+  - name: services
+    rules:
+      - alert: TargetDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Metrics {{ $labels.job }} {{ with $labels.pod }}{{ . }}{{ else }}{{ $labels.instance }}{{ end }} tidak bisa dibaca selama 5 menit."
+
+      - alert: DeploymentMissingReplicas
+        expr: kube_deployment_status_replicas_available < kube_deployment_spec_replicas
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} kekurangan Pod yang siap selama 10 menit."
+
+      - alert: StatefulSetMissingReplicas
+        expr: kube_statefulset_status_replicas_ready < kube_statefulset_replicas
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.namespace }}/{{ $labels.statefulset }} tidak siap selama 10 menit."
+
+      - alert: PodCrashLooping
+        expr: max by (namespace, pod, container) (kube_pod_container_status_waiting_reason{reason=~"CrashLoopBackOff|ImagePullBackOff|ErrImagePull"}) == 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container {{ $labels.container }} di {{ $labels.namespace }}/{{ $labels.pod }} tertahan: {{ $labels.reason }}."
+
+      - alert: PodRestarting
+        expr: increase(kube_pod_container_status_restarts_total[30m]) > 3
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.container }} di {{ $labels.namespace }}/{{ $labels.pod }} restart {{ $value | printf \"%.0f\" }} kali dalam 30 menit."
+
+  - name: shop
+    rules:
+      # Health checks are left out, and a service needs a little traffic first, so one failed
+      # request at night doesn't count as 100% errors.
+      - alert: HighErrorRate
+        expr: |
+          sum by (app) (rate(http_requests_total{job="pods",route!~"GET /(healthz|readyz)",code=~"5.."}[5m]))
+            / sum by (app) (rate(http_requests_total{job="pods",route!~"GET /(healthz|readyz)"}[5m])) > 0.05
+          and sum by (app) (rate(http_requests_total{job="pods",route!~"GET /(healthz|readyz)"}[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.app }}: {{ $value | humanizePercentage }} request gagal (5xx) selama 10 menit."
+
+      - alert: SlowResponses
+        expr: |
+          histogram_quantile(0.95, sum by (app, le) (rate(http_request_duration_seconds_bucket{job="pods",route!~"GET /(healthz|readyz)"}[10m]))) > 2
+          and sum by (app) (rate(http_request_duration_seconds_count{job="pods",route!~"GET /(healthz|readyz)"}[10m])) > 0.05
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.app }}: 5% request paling lambat butuh lebih dari {{ $value | humanizeDuration }} selama 15 menit."
+
+  - name: tools
+    rules:
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL tidak bisa dihubungi selama 2 menit."
+
+      - alert: PostgreSQLTooManyConnections
+        expr: sum(pg_stat_database_numbackends) / max(pg_settings_max_connections) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL memakai {{ $value | humanizePercentage }} dari batas koneksinya."
+
+      # The exporter keeps answering when NATS is gone, but without NATS's numbers.
+      - alert: NATSDown
+        expr: absent(gnatsd_varz_connections)
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "NATS tidak bisa dihubungi selama 5 menit, jadi update realtime di toko berhenti."
+
+      - alert: RabbitMQQueueBacklog
+        expr: rabbitmq_queue_messages_ready > 100
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Antrean RabbitMQ {{ $labels.queue }} menumpuk: {{ $value | printf \"%.0f\" }} pesan menunggu selama 10 menit."
+
+      - alert: RabbitMQQueueWithoutConsumer
+        expr: rabbitmq_queue_consumers == 0 and rabbitmq_queue_messages_ready > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Antrean RabbitMQ {{ $labels.queue }} punya pesan tapi tidak ada service yang membacanya."
+
+  - name: server
+    rules:
+      - alert: DiskAlmostFull
+        expr: node_filesystem_avail_bytes{fstype="xfs"} / node_filesystem_size_bytes{fstype="xfs"} < 0.15
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk {{ $labels.mountpoint }} tinggal {{ $value | humanizePercentage }}."
+
+      - alert: DiskFull
+        expr: node_filesystem_avail_bytes{fstype="xfs"} / node_filesystem_size_bytes{fstype="xfs"} < 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk {{ $labels.mountpoint }} hampir penuh: tinggal {{ $value | humanizePercentage }}."
+
+      - alert: MemoryLow
+        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Memori AldiServer tinggal {{ $value | humanizePercentage }} selama 10 menit."
+
+      - alert: CPUBusy
+        expr: 1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) > 0.9
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU AldiServer di atas 90% selama 30 menit."
+
+  - name: monitoring
+    rules:
+      # If Alertmanager can't reach Telegram, this can't reach Telegram either, but it shows
+      # in Prometheus and Grafana.
+      - alert: AlertsNotSent
+        expr: increase(alertmanager_notifications_failed_total[15m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alertmanager gagal mengirim notifikasi ke {{ $labels.integration }}."
