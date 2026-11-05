@@ -1,0 +1,65 @@
+# kubeadm has no storage provisioner, so these claims bind to folders on AldiServer's disk.
+# Retain keeps the data if a claim is ever deleted.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: prometheus-data
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  claimRef:
+    namespace: monitoring
+    name: prometheus-data
+  hostPath:
+    path: /var/lib/aldi/prometheus
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-data
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  volumeName: prometheus-data
+  resources:
+    requests:
+      storage: 20Gi
+---
+# Holds Grafana's users and anything changed in its pages. Dashboards and the data source
+# come from this repo, so losing it only loses the admin password change and personal settings.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: grafana-data
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  claimRef:
+    namespace: monitoring
+    name: grafana-data
+  hostPath:
+    path: /var/lib/aldi/grafana
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-data
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  volumeName: grafana-data
+  resources:
+    requests:
+      storage: 1Gi
