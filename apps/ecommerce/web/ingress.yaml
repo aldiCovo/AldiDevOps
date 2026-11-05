@@ -43,6 +43,21 @@ spec:
                 name: web
                 port:
                   number: 8080
+          # Each one can send an email or hash a password.
+          - path: /api/password/forgot
+            pathType: Exact
+            backend:
+              service:
+                name: web
+                port:
+                  number: 8080
+          - path: /api/password/reset
+            pathType: Exact
+            backend:
+              service:
+                name: web
+                port:
+                  number: 8080
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
