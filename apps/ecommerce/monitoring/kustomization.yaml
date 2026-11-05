@@ -8,6 +8,7 @@ resources:
   - node-exporter.yaml
   - kube-state-metrics.yaml
   - grafana.yaml
+  - exporters.yaml
 
 # Each name gets a hash of its files, so a change restarts the Pod that reads them.
 # Prometheus and Grafana sync in wave -1 with the other tools, so the files they mount must
@@ -33,3 +34,4 @@ configMapGenerator:
     files:
       - dashboards/server.json
       - dashboards/kubernetes.json
+      - dashboards/toko.json

@@ -56,6 +56,21 @@ scrape_configs:
         regex: POD
         action: drop
 
+  # Queues, messages and connections. The plugin is on in RabbitMQ's image, and per-object
+  # gives each queue its own numbers, which is what shows a backlog.
+  - job_name: rabbitmq
+    metrics_path: /metrics/per-object
+    static_configs:
+      - targets: [rabbitmq-0.rabbitmq.rabbitmq.svc:15692]
+
+  - job_name: nats
+    static_configs:
+      - targets: [nats-exporter.monitoring.svc:7777]
+
+  - job_name: postgresql
+    static_configs:
+      - targets: [postgres-exporter.monitoring.svc:9187]
+
   # Any Pod with the annotation prometheus.io/scrape: "true", read on prometheus.io/port
   # at prometheus.io/path (default /metrics). The shop's services will use this.
   - job_name: pods

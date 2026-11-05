@@ -11,6 +11,10 @@ spec:
       app: search-service
   template:
     metadata:
+      # Prometheus reads /metrics on this port, which no Service routes.
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9091"
       labels:
         app: search-service
     spec:

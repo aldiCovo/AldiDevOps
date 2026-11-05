@@ -1,0 +1,1287 @@
+{
+ "uid": "toko",
+ "title": "Toko",
+ "description": "Lalu lintas setiap service toko, antrean RabbitMQ, NATS, dan PostgreSQL.",
+ "tags": [
+  "aldiserver"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 41,
+ "version": 1,
+ "editable": false,
+ "graphTooltip": 1,
+ "refresh": "30s",
+ "time": {
+  "from": "now-6h",
+  "to": "now"
+ },
+ "templating": {
+  "list": []
+ },
+ "annotations": {
+  "list": []
+ },
+ "panels": [
+  {
+   "type": "stat",
+   "title": "Request / detik",
+   "description": "Semua service, tanpa health check.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(rate(http_requests_total{job=\"pods\",route!~\"GET /(healthz|readyz)\"}[5m]))",
+     "instant": true,
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "reqps",
+     "decimals": null,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "blue",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "id": 1,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 4,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Error 5xx",
+   "description": "Bagian request yang dijawab dengan error server, 5 menit terakhir.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "100 * sum(rate(http_requests_total{job=\"pods\",route!~\"GET /(healthz|readyz)\",code=~\"5..\"}[5m])) / clamp_min(sum(rate(http_requests_total{job=\"pods\",route!~\"GET /(healthz|readyz)\"}[5m])), 1e-9)",
+     "instant": true,
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "decimals": 1,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 1
+       },
+       {
+        "color": "red",
+        "value": 5
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "id": 2,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 4,
+    "y": 0,
+    "w": 4,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Latency p95",
+   "description": "95% request selesai lebih cepat dari ini.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"pods\",route!~\"GET /(healthz|readyz)\"}[5m])))",
+     "instant": true,
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s",
+     "decimals": null,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 0.5
+       },
+       {
+        "color": "red",
+        "value": 2
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "id": 3,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 8,
+    "y": 0,
+    "w": 4,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Antrean RabbitMQ",
+   "description": "Pesan yang menunggu diambil service.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(rabbitmq_queue_messages_ready) or vector(0)",
+     "instant": true,
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "decimals": null,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 10
+       },
+       {
+        "color": "red",
+        "value": 100
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "id": 4,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 0,
+    "w": 4,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Koneksi NATS",
+   "description": "",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(gnatsd_varz_connections) or vector(0)",
+     "instant": true,
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "decimals": null,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "blue",
+        "value": null
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "id": 5,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 16,
+    "y": 0,
+    "w": 4,
+    "h": 4
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Koneksi PostgreSQL",
+   "description": "Batas bawaan PostgreSQL adalah 100.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(pg_stat_database_numbackends{datname!~\"template.*\"})",
+     "instant": true,
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "decimals": null,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 80
+       },
+       {
+        "color": "red",
+        "value": 95
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "id": 6,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 20,
+    "y": 0,
+    "w": 4,
+    "h": 4
+   }
+  },
+  {
+   "type": "row",
+   "title": "Service",
+   "id": 7,
+   "collapsed": false,
+   "gridPos": {
+    "x": 0,
+    "y": 4,
+    "w": 24,
+    "h": 1
+   },
+   "panels": []
+  },
+  {
+   "type": "timeseries",
+   "title": "Request per service",
+   "description": "",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (app) (rate(http_requests_total{job=\"pods\",route!~\"GET /(healthz|readyz)\"}[5m]))",
+     "legendFormat": "{{app}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "reqps",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "right",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ],
+     "sortBy": "Last *",
+     "sortDesc": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "id": 8,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 5,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Error 5xx per service",
+   "description": "Kosong berarti tidak ada error server.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (app) (rate(http_requests_total{job=\"pods\",route!~\"GET /(healthz|readyz)\",code=~\"5..\"}[5m]))",
+     "legendFormat": "{{app}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "reqps",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "right",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ],
+     "sortBy": "Last *",
+     "sortDesc": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "id": 9,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 5,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Latency p95 per service",
+   "description": "",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "histogram_quantile(0.95, sum by (app, le) (rate(http_request_duration_seconds_bucket{job=\"pods\",route!~\"GET /(healthz|readyz)\"}[5m])))",
+     "legendFormat": "{{app}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "right",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ],
+     "sortBy": "Last *",
+     "sortDesc": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "id": 10,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 13,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Status per service",
+   "description": "4xx biasanya salah input atau belum login. 5xx adalah error server.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (app, code) (rate(http_requests_total{job=\"pods\",route!~\"GET /(healthz|readyz)\"}[5m]))",
+     "legendFormat": "{{app}} {{code}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "reqps",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "right",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ],
+     "sortBy": "Last *",
+     "sortDesc": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "id": 11,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 13,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "table",
+   "title": "Rute paling lambat (p95, 1 jam)",
+   "description": "",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "topk(15, histogram_quantile(0.95, sum by (app, route, le) (rate(http_request_duration_seconds_bucket{job=\"pods\",route!~\"GET /(healthz|readyz)\"}[1h]))) > 0)",
+     "instant": true,
+     "format": "table",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "transformations": [
+    {
+     "id": "organize",
+     "options": {
+      "excludeByName": {
+       "Time": true
+      },
+      "indexByName": {
+       "app": 0,
+       "route": 1,
+       "p95": 2
+      },
+      "renameByName": {
+       "Value": "p95"
+      }
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "p95"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "s"
+       },
+       {
+        "id": "decimals",
+        "value": 3
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "sortBy": [
+     {
+      "displayName": "p95",
+      "desc": true
+     }
+    ]
+   },
+   "id": 12,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 21,
+    "w": 24,
+    "h": 9
+   }
+  },
+  {
+   "type": "row",
+   "title": "RabbitMQ",
+   "id": 13,
+   "collapsed": false,
+   "gridPos": {
+    "x": 0,
+    "y": 30,
+    "w": 24,
+    "h": 1
+   },
+   "panels": []
+  },
+  {
+   "type": "timeseries",
+   "title": "Pesan menunggu per antrean",
+   "description": "Naik terus berarti service pembacanya mati atau terlalu lambat.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (queue) (rabbitmq_queue_messages_ready)",
+     "legendFormat": "{{queue}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "right",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ],
+     "sortBy": "Last *",
+     "sortDesc": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "id": 14,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 31,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Pesan sedang diproses",
+   "description": "Sudah diambil tapi belum di-ack.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (queue) (rabbitmq_queue_messages_unacked)",
+     "legendFormat": "{{queue}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "right",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ],
+     "sortBy": "Last *",
+     "sortDesc": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "id": 15,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 31,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "table",
+   "title": "Pembaca per antrean",
+   "description": "Antrean tanpa pembaca (0) tidak diproses sama sekali.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (queue) (rabbitmq_queue_consumers)",
+     "instant": true,
+     "format": "table",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "transformations": [
+    {
+     "id": "organize",
+     "options": {
+      "excludeByName": {
+       "Time": true
+      },
+      "indexByName": {
+       "queue": 0,
+       "pembaca": 1
+      },
+      "renameByName": {
+       "Value": "pembaca"
+      }
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "pembaca"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 1
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "sortBy": []
+   },
+   "id": 16,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 39,
+    "w": 24,
+    "h": 7
+   }
+  },
+  {
+   "type": "row",
+   "title": "NATS dan PostgreSQL",
+   "id": 17,
+   "collapsed": false,
+   "gridPos": {
+    "x": 0,
+    "y": 46,
+    "w": 24,
+    "h": 1
+   },
+   "panels": []
+  },
+  {
+   "type": "timeseries",
+   "title": "Pesan NATS",
+   "description": "Sinyal perubahan pesanan per detik.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(rate(gnatsd_varz_in_msgs[5m]))",
+     "legendFormat": "masuk",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "refId": "B",
+     "expr": "sum(rate(gnatsd_varz_out_msgs[5m]))",
+     "legendFormat": "keluar",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "right",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ],
+     "sortBy": "Last *",
+     "sortDesc": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "id": 18,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 47,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Koneksi PostgreSQL per database",
+   "description": "",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (datname) (pg_stat_database_numbackends{datname!~\"template.*\"})",
+     "legendFormat": "{{datname}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "right",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ],
+     "sortBy": "Last *",
+     "sortDesc": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "id": 19,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 47,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Transaksi PostgreSQL per database",
+   "description": "Commit per detik.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (datname) (rate(pg_stat_database_xact_commit{datname!~\"template.*\"}[5m]))",
+     "legendFormat": "{{datname}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "right",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ],
+     "sortBy": "Last *",
+     "sortDesc": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "id": 20,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 55,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Ukuran database",
+   "description": "",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (datname) (pg_database_size_bytes{datname!~\"template.*\"})",
+     "legendFormat": "{{datname}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "right",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ],
+     "sortBy": "Last *",
+     "sortDesc": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "id": 21,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 55,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "row",
+   "title": "Proses Go",
+   "id": 22,
+   "collapsed": false,
+   "gridPos": {
+    "x": 0,
+    "y": 63,
+    "w": 24,
+    "h": 1
+   },
+   "panels": []
+  },
+  {
+   "type": "timeseries",
+   "title": "Memori per service",
+   "description": "Heap yang dipakai Go.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (app) (go_memstats_heap_inuse_bytes{job=\"pods\"})",
+     "legendFormat": "{{app}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "right",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ],
+     "sortBy": "Last *",
+     "sortDesc": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "id": 23,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 64,
+    "w": 12,
+    "h": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Goroutine per service",
+   "description": "Naik terus tanpa turun bisa berarti ada yang bocor.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (app) (go_goroutines{job=\"pods\"})",
+     "legendFormat": "{{app}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "right",
+     "calcs": [
+      "lastNotNull",
+      "max"
+     ],
+     "sortBy": "Last *",
+     "sortDesc": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "id": 24,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 64,
+    "w": 12,
+    "h": 8
+   }
+  }
+ ]
+}

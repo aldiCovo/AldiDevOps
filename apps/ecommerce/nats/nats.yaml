@@ -43,6 +43,10 @@ spec:
     - name: client
       port: 4222
       targetPort: 4222
+    # Read by the NATS exporter in monitoring. It only shows counts and connection names.
+    - name: monitoring
+      port: 8222
+      targetPort: 8222
 ---
 # No volume: core NATS keeps no messages, because the order status is in PostgreSQL.
 apiVersion: apps/v1
