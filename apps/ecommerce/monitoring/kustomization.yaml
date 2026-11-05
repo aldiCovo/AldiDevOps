@@ -10,6 +10,11 @@ resources:
   - grafana.yaml
 
 # Each name gets a hash of its files, so a change restarts the Pod that reads them.
+# Prometheus and Grafana sync in wave -1 with the other tools, so the files they mount must
+# exist by then too, or ArgoCD waits forever for them to become healthy.
+generatorOptions:
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 configMapGenerator:
   - name: scrape-config
     namespace: monitoring
