@@ -1,0 +1,83 @@
+# Changing this file restarts Prometheus, because kustomization.yaml puts a hash of it in
+# the ConfigMap's name.
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: [localhost:9090]
+
+  # AldiServer itself: CPU, memory, disk and network.
+  - job_name: node
+    static_configs:
+      - targets: [node-exporter.monitoring.svc:9100]
+    relabel_configs:
+      - target_label: instance
+        replacement: aldiserver
+
+  # Every object's state: Pods that aren't ready, restarts, Deployments missing replicas.
+  - job_name: kube-state-metrics
+    honor_labels: true
+    static_configs:
+      - targets: [kube-state-metrics.monitoring.svc:8080]
+
+  # The kubelet's own metrics. kubeadm leaves the kubelet with a certificate it signed itself,
+  # which no CA can check, so only the token proves who is asking.
+  - job_name: kubelet
+    scheme: https
+    authorization:
+      credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tls_config:
+      insecure_skip_verify: true
+    kubernetes_sd_configs:
+      - role: node
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_node_name]
+        target_label: node
+
+  # Each container's CPU, memory and network, through the kubelet.
+  - job_name: cadvisor
+    scheme: https
+    metrics_path: /metrics/cadvisor
+    authorization:
+      credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tls_config:
+      insecure_skip_verify: true
+    kubernetes_sd_configs:
+      - role: node
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_node_name]
+        target_label: node
+    metric_relabel_configs:
+      # Series without a container are the Pod's sandbox and add nothing.
+      - source_labels: [container]
+        regex: POD
+        action: drop
+
+  # Any Pod with the annotation prometheus.io/scrape: "true", read on prometheus.io/port
+  # at prometheus.io/path (default /metrics). The shop's services will use this.
+  - job_name: pods
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        regex: "true"
+        action: keep
+      - source_labels: [__meta_kubernetes_pod_phase]
+        regex: Running
+        action: keep
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        regex: (.+)
+        target_label: __metrics_path__
+      - source_labels: [__meta_kubernetes_pod_ip, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        regex: (.+);(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: pod
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        target_label: app

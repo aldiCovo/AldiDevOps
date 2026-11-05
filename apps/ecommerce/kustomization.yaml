@@ -19,6 +19,7 @@ resources:
   - web
   - admin-service
   - web-admin
+  - monitoring
 
 # Tools start before the services that need them. ArgoCD never deletes these objects, even if
 # they leave Git or the Application is deleted, because their data can't be rebuilt from Git.
@@ -26,7 +27,7 @@ resources:
 # doesn't restart any Pod.
 patches:
   - target:
-      name: (postgresql|rabbitmq|elasticsearch|nats|mailpit)(-.*)?
+      name: (postgresql|rabbitmq|elasticsearch|nats|mailpit|monitoring|prometheus|grafana)(-.*)?
     patch: |-
       apiVersion: v1
       kind: Protected

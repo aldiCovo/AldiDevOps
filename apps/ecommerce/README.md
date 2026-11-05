@@ -20,6 +20,7 @@ Everything for the shop, with one folder per service and per tool it uses.
 | [`elasticsearch/`](elasticsearch/) | Search index | ArgoCD, after the `elasticsearch-admin` Secret below exists |
 | [`nats/`](nats/) | Signals that an order changed | ArgoCD, after the Secrets below exist |
 | [`mailpit/`](mailpit/) | Catches the shop's emails, and delivers none | ArgoCD |
+| [`monitoring/`](monitoring/) | Prometheus and Grafana at `grafana.aldiab.ai.id`, for the server, the cluster and the shop | ArgoCD, after the `grafana-admin` Secret below exists |
 
 Everything here belongs to one Application in ArgoCD, `ecommerce`, which deploys what [`kustomization.yaml`](kustomization.yaml) lists. Secrets, and what's inside the tools, such as databases, users and vhosts, are created by hand, because this repo is public.
 
@@ -32,7 +33,7 @@ ArgoCD does apply a change to a tool as soon as it's merged, and most changes to
 Each service keeps its own folder, namespace and image tag. The namespaces are created by hand, because the Secrets below must exist before anything that uses them starts:
 
 ```bash
-for NAMESPACE in postgresql rabbitmq elasticsearch nats mailpit catalog search user order payment realtime notification cart web admin web-admin; do
+for NAMESPACE in postgresql rabbitmq elasticsearch nats mailpit monitoring catalog search user order payment realtime notification cart web admin web-admin; do
   kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 done
 kubectl apply -f k8s/argocd/ecommerce-application.yaml
@@ -152,6 +153,44 @@ The shop's photos live in `/var/lib/aldi/photos` on AldiServer, outside any imag
 ## Open the shop to the internet
 
 The Ingress in `web/` routes the domain, but nothing reaches it until Cloudflare knows about it. In the Cloudflare dashboard, add a Public Hostname to the tunnel: `prastika.aldiab.ai.id`, type `HTTP`, service `traefik.traefik.svc.cluster.local:80`.
+
+## Monitoring
+
+| Part | Does |
+|---|---|
+| Prometheus | Reads every metric each 30 seconds and keeps them for 30 days or 15 GB, whichever comes first, in `/var/lib/aldi/prometheus`. It has no login, so it has no Ingress |
+| node-exporter | AldiServer's CPU, memory, disks and network. It shares the server's network, so it listens on port 9100 of the server |
+| kube-state-metrics | Which Pods are ready, restarts and why a container last stopped, and Deployments missing replicas |
+| kubelet and cAdvisor | Each container's CPU and memory, read through the kubelet with Prometheus's ServiceAccount |
+| Grafana | The dashboards at `https://grafana.aldiab.ai.id`, with only an `admin` login. Its users and settings are in `/var/lib/aldi/grafana` |
+
+The dashboards **Server** and **Kubernetes**, in the AldiServer folder, come from [`monitoring/dashboards/`](monitoring/dashboards/) and can't be changed in Grafana's pages. To change one, edit its JSON in a PR. A dashboard made in Grafana is kept in its database instead.
+
+A Pod with the annotations `prometheus.io/scrape: "true"` and `prometheus.io/port` is read automatically, at `prometheus.io/path` or `/metrics`.
+
+To query Prometheus directly, run this on AldiServer and browse to `http://localhost:9090` through an SSH tunnel:
+
+```bash
+kubectl port-forward -n monitoring svc/prometheus 9090:9090
+```
+
+### Create the Grafana login
+
+Run this once, on AldiServer, before the first sync. Grafana only reads it when it creates its database, so later changes to the password are made in Grafana:
+
+```bash
+kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+GRAFANA_PASSWORD=$(openssl rand -base64 18)
+kubectl create secret generic grafana-admin -n monitoring --from-literal=password="$GRAFANA_PASSWORD"
+echo "Grafana admin password: $GRAFANA_PASSWORD"
+unset GRAFANA_PASSWORD
+```
+
+If the password is lost, reset it with `kubectl exec -n monitoring deploy/grafana -- grafana cli admin reset-admin-password '<new password>'`.
+
+### Open Grafana to the internet
+
+In the Cloudflare dashboard, add a Public Hostname to the tunnel: `grafana.aldiab.ai.id`, type `HTTP`, service `traefik.traefik.svc.cluster.local:80`, the same as the shop's.
 
 ## PostgreSQL
 
