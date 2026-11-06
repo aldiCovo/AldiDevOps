@@ -52,14 +52,14 @@ loki.process "pods" {
   stage.cri {}
 
   // The shop's services log JSON with "level": "INFO", "WARN" or "ERROR". It becomes a
-  // lowercase label, so a search for errors only opens their streams. Other lines pass
-  // through without one.
+  // lowercase label, so a search for errors only opens their streams, and "warning", which
+  // some tools write, becomes "warn". Other lines pass through without one.
   stage.json {
     expressions = { level = "level" }
   }
   stage.template {
     source   = "level"
-    template = "{{ ToLower .Value }}"
+    template = "{{ $l := ToLower .Value }}{{ if eq $l \"warning\" }}warn{{ else }}{{ $l }}{{ end }}"
   }
   stage.labels {
     values = { level = "" }
