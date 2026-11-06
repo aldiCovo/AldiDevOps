@@ -1,0 +1,9 @@
+# One ICMP echo per probe. Prometheus probes every 5 seconds, so the share of failed probes
+# is the packet loss.
+modules:
+  icmp:
+    prober: icmp
+    timeout: 3s
+    icmp:
+      preferred_ip_protocol: ip4
+      ip_protocol_fallback: false
