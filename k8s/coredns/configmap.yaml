@@ -1,0 +1,40 @@
+# kubeadm's CoreDNS settings with one change: serve_stale in the cache.
+#
+# Names outside the cluster go to the router, 10.10.0.1, the only resolver this network lets
+# through. It sometimes stops answering for a while, hundreds of times an hour at its worst,
+# and cloudflared and ArgoCD then fail to find Cloudflare and GitHub. With serve_stale, an
+# answer CoreDNS has seen in the last hour is given straight away while it asks again in the
+# background, so a slow router no longer breaks lookups.
+#
+# CoreDNS reloads this by itself within a minute of applying it, with no restart.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns
+  namespace: kube-system
+data:
+  Corefile: |
+    .:53 {
+        errors
+        health {
+           lameduck 5s
+        }
+        ready
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+           pods insecure
+           fallthrough in-addr.arpa ip6.arpa
+           ttl 30
+        }
+        prometheus :9153
+        forward . /etc/resolv.conf {
+           max_concurrent 1000
+        }
+        cache 30 {
+           disable success cluster.local
+           disable denial cluster.local
+           serve_stale 1h immediate
+        }
+        loop
+        reload
+        loadbalance
+    }
