@@ -72,6 +72,22 @@ scrape_configs:
     static_configs:
       - targets: [alertmanager.monitoring.svc:9093]
 
+  # The cluster's DNS. Its Pods have no prometheus.io annotations, since kubeadm made them.
+  - job_name: coredns
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names: [kube-system]
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_k8s_app]
+        regex: kube-dns
+        action: keep
+      - source_labels: [__meta_kubernetes_pod_ip]
+        replacement: $1:9153
+        target_label: __address__
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: pod
+
   - job_name: rabbitmq
     metrics_path: /metrics/per-object
     static_configs:

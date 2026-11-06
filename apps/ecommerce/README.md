@@ -163,6 +163,7 @@ The Ingress in `web/` routes the domain, but nothing reaches it until Cloudflare
 | kube-state-metrics | Which Pods are ready, restarts and why a container last stopped, and Deployments missing replicas |
 | kubelet and cAdvisor | Each container's CPU and memory, read through the kubelet with Prometheus's ServiceAccount |
 | The shop's services | Requests, errors, latency and Go's memory, from each service's `/metrics` on port 9091, found through their Pods' `prometheus.io` annotations |
+| CoreDNS | The cluster's DNS: lookups answered and failed, read from kubeadm's CoreDNS Pods on port 9153 |
 | RabbitMQ | Each queue's waiting and unacknowledged messages and its consumers, from the plugin on port 15692 |
 | nats-exporter | NATS connections and messages, from NATS's monitoring port 8222 |
 | postgres-exporter | Connections, commits and size of each database, logged in as the `monitoring` role |
@@ -196,6 +197,7 @@ The rules are in [`monitoring/alert-rules.yml`](monitoring/alert-rules.yml), eac
 | RabbitMQQueueBacklog, RabbitMQQueueWithoutConsumer | Over 100 messages waiting for 10 minutes, or messages with no consumer for 5 |
 | DiskAlmostFull, DiskFull | Under 15% free for 10 minutes, or under 5% for 5 |
 | MemoryLow, CPUBusy | Under 10% memory free for 10 minutes, or CPU over 90% for 30 |
+| DNSLookupsFailing, DNSDown | Over 5% of the cluster's DNS lookups fail for 15 minutes, or over 50% for 5. Names outside the cluster go through the router, 10.10.0.1 |
 | AlertsNotSent | Alertmanager failed to deliver a notification |
 
 Firing alerts are listed in Prometheus at `/alerts`, and in Alertmanager, which also takes silences:
