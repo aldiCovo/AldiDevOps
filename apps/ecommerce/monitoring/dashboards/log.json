@@ -18,6 +18,46 @@
  "templating": {
   "list": [
    {
+    "name": "grup",
+    "label": "Grup",
+    "type": "custom",
+    "description": "Toko: service toko dan web. Tool toko: database, antrean dan pencarian yang dipakai toko. Namespace baru perlu ditambahkan di sini.",
+    "query": "Semua : .+, Toko : admin|cart|catalog|notification|order|payment|realtime|search|user|web|web-admin, Tool toko : elasticsearch|mailpit|nats|postgresql|rabbitmq, Infrastruktur : argocd|cloudflared|default|kube-.*|metallb-system|monitoring|traefik, CV : cv",
+    "options": [
+     {
+      "text": "Semua",
+      "value": ".+",
+      "selected": false
+     },
+     {
+      "text": "Toko",
+      "value": "admin|cart|catalog|notification|order|payment|realtime|search|user|web|web-admin",
+      "selected": true
+     },
+     {
+      "text": "Tool toko",
+      "value": "elasticsearch|mailpit|nats|postgresql|rabbitmq",
+      "selected": false
+     },
+     {
+      "text": "Infrastruktur",
+      "value": "argocd|cloudflared|default|kube-.*|metallb-system|monitoring|traefik",
+      "selected": false
+     },
+     {
+      "text": "CV",
+      "value": "cv",
+      "selected": false
+     }
+    ],
+    "current": {
+     "text": "Toko",
+     "value": "admin|cart|catalog|notification|order|payment|realtime|search|user|web|web-admin"
+    },
+    "multi": false,
+    "includeAll": false
+   },
+   {
     "name": "namespace",
     "label": "Service / namespace",
     "type": "query",
@@ -28,13 +68,13 @@
     "query": {
      "qryType": 1,
      "label": "namespace",
+     "stream": "{namespace=~\"$grup\"}",
      "refId": "ns"
     },
-    "definition": "label_values(namespace)",
+    "definition": "label_values({namespace=~\"$grup\"}, namespace)",
     "refresh": 2,
     "sort": 1,
     "includeAll": true,
-    "allValue": ".+",
     "multi": true,
     "current": {
      "text": "All",
