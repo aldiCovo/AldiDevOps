@@ -167,12 +167,13 @@ The Ingress in `web/` routes the domain, but nothing reaches it until Cloudflare
 | RabbitMQ | Each queue's waiting and unacknowledged messages and its consumers, from the plugin on port 15692 |
 | nats-exporter | NATS connections and messages, from NATS's monitoring port 8222 |
 | postgres-exporter | Connections, commits and size of each database, logged in as the `monitoring` role |
+| blackbox-exporter | Pings the office router, 10.10.0.1, and the internet, 1.1.1.1, every 5 seconds, so the share of unanswered pings is AldiServer's packet loss. It pings without root, through the `net.ipv4.ping_group_range` sysctl |
 | Alertmanager | Sends the alerts Prometheus raises to Telegram, grouped, and again every 4 hours (24 for warnings) while they last. Its silences are forgotten when it restarts |
 | Grafana | The dashboards and logs at `https://grafana.aldiab.ai.id`, with only an `admin` login. Its users and settings are in `/var/lib/aldi/grafana` |
 | Loki | Keeps every container's log for 7 days in `/var/lib/aldi/loki`, and checks the log alerts. It has no login, so it has no Ingress |
 | Alloy | Runs on each node, reads its containers' logs from `/var/log/pods` and sends them to Loki labelled with `namespace`, `pod`, `container`, `app` and, for JSON lines with a `level` field, `level` in lowercase |
 
-The dashboards **Server**, **Kubernetes**, **Toko** and **Log**, in the AldiServer folder, come from [`monitoring/dashboards/`](monitoring/dashboards/) and can't be changed in Grafana's pages. To change one, edit its JSON in a PR. A dashboard made in Grafana is kept in its database instead.
+The dashboards **Server** (including packet loss, ping time, link speed and network card errors), **Kubernetes**, **Toko** and **Log**, in the AldiServer folder, come from [`monitoring/dashboards/`](monitoring/dashboards/) and can't be changed in Grafana's pages. To change one, edit its JSON in a PR. A dashboard made in Grafana is kept in its database instead.
 
 Both **Kubernetes** and **Log** have a **Grup** list above the namespaces: Toko (the shop's services and web pages), Tool toko (its databases, queues and search), Infrastruktur, CV, or Semua. The groups are written in each dashboard's JSON, so a new namespace is added there too. **Kubernetes** opens with a table of every service in the group: CPU and its request, memory and its limit, network and restarts. **Log** shows the logs of the chosen services, filtered by level and by a case-insensitive regex, with error counts per service. Logs can also be searched in Grafana's **Explore** with the Loki data source, for example `{namespace="order", level="error"}` or `{app="catalog-service"} |= "sale"`.
 
@@ -203,6 +204,9 @@ The rules are in [`monitoring/alert-rules.yml`](monitoring/alert-rules.yml), eac
 | MemoryLow, CPUBusy | Under 10% memory free for 10 minutes, or CPU over 90% for 30 |
 | DNSLookupsFailing, DNSDown | Over 5% of the cluster's DNS lookups fail for 15 minutes, or over 50% for 5. Names outside the cluster go through the router, 10.10.0.1 |
 | AlertsNotSent | Alertmanager failed to deliver a notification |
+| PacketLoss, PacketLossHigh | Over 5% of pings to the router or the internet lost for 10 minutes, or over 20% for 5 |
+| NetworkInterfaceErrors | The network card keeps counting send or receive errors for 15 minutes |
+| NetworkLinkSlow | The network card's link is under 1000 Mbps for 15 minutes, usually a bad cable or switch port |
 | ErrorLogsSpike | A namespace writes more than 5 lines with level `error` in 10 minutes, for 2 minutes. Loki checks this one, from [`monitoring/log-alert-rules.yml`](monitoring/log-alert-rules.yml), and sends it to the same Alertmanager |
 
 Firing alerts are listed in Prometheus at `/alerts`, and in Alertmanager, which also takes silences:

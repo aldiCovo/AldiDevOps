@@ -49,6 +49,10 @@ configMapGenerator:
       - dashboards/kubernetes.json
       - dashboards/toko.json
       - dashboards/log.json
+  - name: blackbox-config
+    namespace: monitoring
+    files:
+      - blackbox.yml
   - name: loki-config
     namespace: monitoring
     files:

@@ -88,6 +88,29 @@ scrape_configs:
       - source_labels: [__meta_kubernetes_pod_name]
         target_label: pod
 
+  # Packet loss from AldiServer: one ping every 5 seconds to the office router and to
+  # Cloudflare's 1.1.1.1, through blackbox-exporter. probe_success is 1 or 0 per ping.
+  - job_name: ping
+    scrape_interval: 5s
+    scrape_timeout: 4s
+    metrics_path: /probe
+    params:
+      module: [icmp]
+    static_configs:
+      - targets: [10.10.0.1]
+        labels:
+          target: router
+      - targets: [1.1.1.1]
+        labels:
+          target: internet
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter.monitoring.svc:9115
+
   - job_name: rabbitmq
     metrics_path: /metrics/per-object
     static_configs:

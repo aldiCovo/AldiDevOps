@@ -99,3 +99,64 @@ spec:
   ports:
     - port: 9187
       targetPort: 9187
+---
+# Pings the router and the internet for Prometheus, to measure AldiServer's packet loss.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blackbox-exporter
+  namespace: monitoring
+  labels:
+    app: blackbox-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blackbox-exporter
+  template:
+    metadata:
+      labels:
+        app: blackbox-exporter
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        # Lets a user without root send pings through an ICMP datagram socket.
+        sysctls:
+          - name: net.ipv4.ping_group_range
+            value: "0 2147483647"
+      containers:
+        - name: blackbox-exporter
+          image: prom/blackbox-exporter:v0.29.1
+          args: ["--config.file=/etc/blackbox/blackbox.yml"]
+          ports:
+            - containerPort: 9115
+          readinessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9115
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/blackbox
+      volumes:
+        - name: config
+          configMap:
+            name: blackbox-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blackbox-exporter
+  namespace: monitoring
+spec:
+  selector:
+    app: blackbox-exporter
+  ports:
+    - port: 9115
+      targetPort: 9115

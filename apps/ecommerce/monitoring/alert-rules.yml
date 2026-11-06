@@ -182,3 +182,44 @@ groups:
           severity: warning
         annotations:
           summary: "Alertmanager gagal mengirim notifikasi ke {{ $labels.integration }}."
+
+  - name: network
+    rules:
+      # A few lost pings are normal, a steady share is not.
+      - alert: PacketLoss
+        expr: 100 * (1 - avg_over_time(probe_success{job="ping"}[10m])) > 5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AldiServer kehilangan {{ $value | printf \"%.0f\" }}% ping ke {{ $labels.target }} ({{ $labels.instance }}) dalam 10 menit terakhir."
+
+      - alert: PacketLossHigh
+        expr: 100 * (1 - avg_over_time(probe_success{job="ping"}[5m])) > 20
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "AldiServer kehilangan {{ $value | printf \"%.0f\" }}% ping ke {{ $labels.target }} ({{ $labels.instance }}). Toko kemungkinan sering gagal dibuka."
+
+      - alert: NetworkInterfaceErrors
+        expr: |
+          sum by (device) (
+            rate(node_network_transmit_errs_total{device!~"lo|veth.*|cni.*|flannel.*"}[5m])
+            + rate(node_network_receive_errs_total{device!~"lo|veth.*|cni.*|flannel.*"}[5m])
+          ) > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kartu jaringan {{ $labels.device }} di AldiServer terus mencatat error kirim/terima selama 15 menit. Cek kabel dan port switch."
+
+      # The office network is gigabit, so 100 Mbps or less means a bad cable or port.
+      - alert: NetworkLinkSlow
+        expr: node_network_speed_bytes{device=~"en.*|eth.*"} * 8 / 1e6 < 1000
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Link {{ $labels.device }} di AldiServer hanya {{ $value | printf \"%.0f\" }} Mbps, bukan 1000. Biasanya kabel LAN atau port switch yang rusak."
+
