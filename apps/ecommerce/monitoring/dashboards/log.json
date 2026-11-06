@@ -1,0 +1,414 @@
+{
+ "uid": "log",
+ "title": "Log",
+ "description": "Log semua container, disimpan Loki 7 hari.",
+ "tags": [
+  "aldiserver"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 41,
+ "version": 1,
+ "editable": false,
+ "graphTooltip": 1,
+ "refresh": "30s",
+ "time": {
+  "from": "now-1h",
+  "to": "now"
+ },
+ "templating": {
+  "list": [
+   {
+    "name": "namespace",
+    "label": "Service / namespace",
+    "type": "query",
+    "datasource": {
+     "type": "loki",
+     "uid": "loki"
+    },
+    "query": {
+     "qryType": 1,
+     "label": "namespace",
+     "refId": "ns"
+    },
+    "definition": "label_values(namespace)",
+    "refresh": 2,
+    "sort": 1,
+    "includeAll": true,
+    "allValue": ".+",
+    "multi": true,
+    "current": {
+     "text": "All",
+     "value": "$__all"
+    }
+   },
+   {
+    "name": "level",
+    "label": "Level",
+    "type": "custom",
+    "query": "error,warn,info,debug",
+    "includeAll": true,
+    "allValue": ".*",
+    "multi": true,
+    "current": {
+     "text": "All",
+     "value": "$__all"
+    },
+    "options": []
+   },
+   {
+    "name": "search",
+    "label": "Cari (regex, tanpa huruf besar/kecil)",
+    "type": "textbox",
+    "query": "",
+    "current": {
+     "text": "",
+     "value": ""
+    }
+   }
+  ]
+ },
+ "annotations": {
+  "list": []
+ },
+ "panels": [
+  {
+   "type": "stat",
+   "title": "Log error 1 jam",
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 6,
+    "h": 4
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(count_over_time({namespace=~\"$namespace\", level=\"error\"}[1h])) or vector(0)",
+     "queryType": "instant",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 1
+       },
+       {
+        "color": "red",
+        "value": 20
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   },
+   "id": 1,
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Log warning 1 jam",
+   "gridPos": {
+    "x": 6,
+    "y": 0,
+    "w": 6,
+    "h": 4
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(count_over_time({namespace=~\"$namespace\", level=\"warn\"}[1h])) or vector(0)",
+     "queryType": "instant",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   },
+   "id": 2,
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   }
+  },
+  {
+   "type": "bargauge",
+   "title": "Error per service (1 jam)",
+   "gridPos": {
+    "x": 12,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "description": "Service yang paling banyak menulis log error dalam 1 jam terakhir.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sort_desc(sum by (namespace) (count_over_time({namespace=~\"$namespace\", level=\"error\"}[1h])))",
+     "queryType": "instant",
+     "legendFormat": "{{namespace}}",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "red"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "orientation": "horizontal",
+    "displayMode": "basic",
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "showUnfilled": true
+   },
+   "id": 3,
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Baris log 1 jam",
+   "gridPos": {
+    "x": 0,
+    "y": 4,
+    "w": 12,
+    "h": 4
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(count_over_time({namespace=~\"$namespace\"}[1h])) or vector(0)",
+     "queryType": "instant",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "blue"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "value",
+    "graphMode": "none"
+   },
+   "id": 4,
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Log error dan warning per service",
+   "gridPos": {
+    "x": 0,
+    "y": 8,
+    "w": 12,
+    "h": 8
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (namespace, level) (count_over_time({namespace=~\"$namespace\", level=~\"error|warn\"} [$__auto]))",
+     "legendFormat": "{{namespace}} {{level}}",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "drawStyle": "bars",
+      "fillOpacity": 80,
+      "stacking": {
+       "mode": "normal"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   },
+   "id": 5,
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Baris log per service",
+   "gridPos": {
+    "x": 12,
+    "y": 8,
+    "w": 12,
+    "h": 8
+   },
+   "description": "Mengikuti pilihan level dan kotak cari di atas.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (namespace) (count_over_time({namespace=~\"$namespace\", level=~\"$level\"} |~ \"(?i)$search\" [$__auto]))",
+     "legendFormat": "{{namespace}}",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "drawStyle": "bars",
+      "fillOpacity": 80,
+      "stacking": {
+       "mode": "normal"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   },
+   "id": 6,
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   }
+  },
+  {
+   "type": "logs",
+   "title": "Log",
+   "gridPos": {
+    "x": 0,
+    "y": 16,
+    "w": 24,
+    "h": 20
+   },
+   "description": "Paling baru di atas. Klik satu baris untuk melihat label dan field JSON-nya.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "{namespace=~\"$namespace\", level=~\"$level\"} |~ \"(?i)$search\"",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "maxLines": 1000
+    }
+   ],
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "prettifyLogMessage": false,
+    "enableLogDetails": true,
+    "sortOrder": "Descending",
+    "dedupStrategy": "none",
+    "showLabels": false,
+    "showCommonLabels": false
+   },
+   "id": 7,
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   }
+  }
+ ]
+}

@@ -10,9 +10,11 @@ resources:
   - grafana.yaml
   - exporters.yaml
   - alertmanager.yaml
+  - loki.yaml
+  - alloy.yaml
 
 # Each name gets a hash of its files, so a change restarts the Pod that reads them.
-# Prometheus and Grafana sync in wave -1 with the other tools, so the files they mount must
+# Prometheus, Grafana and Loki sync in wave -1 with the other tools, so the files they mount must
 # exist by then too, or ArgoCD waits forever for them to become healthy.
 generatorOptions:
   annotations:
@@ -35,6 +37,7 @@ configMapGenerator:
     namespace: monitoring
     files:
       - provisioning/prometheus.yaml
+      - provisioning/loki.yaml
   - name: dashboard-providers
     namespace: monitoring
     files:
@@ -45,3 +48,16 @@ configMapGenerator:
       - dashboards/server.json
       - dashboards/kubernetes.json
       - dashboards/toko.json
+      - dashboards/log.json
+  - name: loki-config
+    namespace: monitoring
+    files:
+      - loki.yml
+  - name: loki-rules
+    namespace: monitoring
+    files:
+      - log-alert-rules.yml
+  - name: alloy-config
+    namespace: monitoring
+    files:
+      - config.alloy

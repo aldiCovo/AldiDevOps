@@ -1,7 +1,7 @@
 {
  "uid": "kubernetes",
  "title": "Kubernetes",
- "description": "Kondisi Pod dan pemakaian CPU/memori per namespace dan Pod.",
+ "description": "Kondisi Pod dan pemakaian CPU, memori dan jaringan per service, namespace dan Pod.",
  "tags": [
   "aldiserver"
  ],
@@ -347,6 +347,426 @@
   },
   {
    "type": "row",
+   "title": "Semua service sekaligus",
+   "collapsed": false,
+   "gridPos": {
+    "x": 0,
+    "y": 4,
+    "w": 24,
+    "h": 1
+   },
+   "panels": [],
+   "id": 15,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   }
+  },
+  {
+   "type": "table",
+   "title": "Ringkasan per service",
+   "gridPos": {
+    "x": 0,
+    "y": 5,
+    "w": 24,
+    "h": 12
+   },
+   "description": "Satu baris per namespace (satu service atau tool). CPU dalam core. % limit memori mendekati 100 berarti container bisa OOMKilled. Jaringan tidak dihitung untuk Pod yang memakai jaringan server langsung (hostNetwork), karena angkanya trafik seluruh server.",
+   "targets": [
+    {
+     "refId": "CPU",
+     "expr": "sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=\"\", namespace!~\"kube-.*\"}[5m]))",
+     "instant": true,
+     "format": "table",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "refId": "REQ",
+     "expr": "sum by (namespace) (kube_pod_container_resource_requests{resource=\"cpu\", namespace!~\"kube-.*\"})",
+     "instant": true,
+     "format": "table",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "refId": "MEM",
+     "expr": "sum by (namespace) (container_memory_working_set_bytes{container!=\"\", namespace!~\"kube-.*\"})",
+     "instant": true,
+     "format": "table",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "refId": "LIM",
+     "expr": "round(100 * sum by (namespace) (container_memory_working_set_bytes{container!=\"\", namespace!~\"kube-.*\"}) / sum by (namespace) (kube_pod_container_resource_limits{resource=\"memory\", namespace!~\"kube-.*\"}), 0.1)",
+     "instant": true,
+     "format": "table",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "refId": "RX",
+     "expr": "sum by (namespace) (rate(container_network_receive_bytes_total{namespace!~\"|kube-.*\"}[5m]) unless on(namespace, pod) kube_pod_info{host_network=\"true\"})",
+     "instant": true,
+     "format": "table",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "refId": "TX",
+     "expr": "sum by (namespace) (rate(container_network_transmit_bytes_total{namespace!~\"|kube-.*\"}[5m]) unless on(namespace, pod) kube_pod_info{host_network=\"true\"})",
+     "instant": true,
+     "format": "table",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "refId": "RST",
+     "expr": "round(sum by (namespace) (increase(kube_pod_container_status_restarts_total{namespace!~\"kube-.*\"}[24h])))",
+     "instant": true,
+     "format": "table",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "transformations": [
+    {
+     "id": "joinByField",
+     "options": {
+      "byField": "namespace",
+      "mode": "outer"
+     }
+    },
+    {
+     "id": "organize",
+     "options": {
+      "excludeByName": {
+       "Time": true,
+       "Time 1": true,
+       "Time 2": true,
+       "Time 3": true,
+       "Time 4": true,
+       "Time 5": true,
+       "Time 6": true,
+       "Time 7": true
+      },
+      "renameByName": {
+       "Value #CPU": "CPU",
+       "Value #REQ": "CPU request",
+       "Value #MEM": "Memori",
+       "Value #LIM": "% limit memori",
+       "Value #RX": "Jaringan masuk",
+       "Value #TX": "Jaringan keluar",
+       "Value #RST": "Restart 24 jam"
+      },
+      "indexByName": {
+       "namespace": 0,
+       "Value #CPU": 1,
+       "Value #REQ": 2,
+       "Value #MEM": 3,
+       "Value #LIM": 4,
+       "Value #RX": 5,
+       "Value #TX": 6,
+       "Value #RST": 7
+      }
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "decimals": 2
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Memori"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "bytes"
+       },
+       {
+        "id": "decimals",
+        "value": 0
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "% limit memori"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percent"
+       },
+       {
+        "id": "decimals",
+        "value": 1
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-background"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "green",
+           "value": null
+          },
+          {
+           "color": "orange",
+           "value": 75
+          },
+          {
+           "color": "red",
+           "value": 90
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Jaringan masuk"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "Bps"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Jaringan keluar"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "Bps"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Restart 24 jam"
+      },
+      "properties": [
+       {
+        "id": "decimals",
+        "value": 0
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "text",
+           "value": null
+          },
+          {
+           "color": "red",
+           "value": 1
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "sortBy": [
+     {
+      "displayName": "Memori",
+      "desc": true
+     }
+    ]
+   },
+   "id": 16,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "CPU dibanding request per service",
+   "gridPos": {
+    "x": 0,
+    "y": 17,
+    "w": 12,
+    "h": 8
+   },
+   "description": "Lebih dari 100% berarti service memakai CPU lebih banyak dari yang dipesannya.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "100 * sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=\"\", namespace!~\"kube-.*\"}[5m])) / sum by (namespace) (kube_pod_container_resource_requests{resource=\"cpu\", namespace!~\"kube-.*\"})",
+     "legendFormat": "{{namespace}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent"
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "id": 17,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Jaringan per service (masuk + keluar)",
+   "gridPos": {
+    "x": 12,
+    "y": 17,
+    "w": 12,
+    "h": 8
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (namespace) (rate(container_network_receive_bytes_total{namespace!~\"|kube-.*\"}[5m]) + rate(container_network_transmit_bytes_total{namespace!~\"|kube-.*\"}[5m]) unless on(namespace, pod) kube_pod_info{host_network=\"true\"})",
+     "legendFormat": "{{namespace}}",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps"
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "id": 18,
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Log error per service",
+   "gridPos": {
+    "x": 0,
+    "y": 25,
+    "w": 24,
+    "h": 6
+   },
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "description": "Dari Loki. Detailnya di dashboard Log.",
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (namespace) (count_over_time({level=\"error\"} [$__auto]))",
+     "legendFormat": "{{namespace}}",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "drawStyle": "bars",
+      "fillOpacity": 80,
+      "stacking": {
+       "mode": "normal"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "links": [
+    {
+     "title": "Buka dashboard Log",
+     "url": "/d/log"
+    }
+   ],
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   },
+   "id": 19
+  },
+  {
+   "type": "row",
    "title": "Per namespace",
    "id": 6,
    "collapsed": false,
@@ -409,7 +829,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 5,
+    "y": 32,
     "w": 12,
     "h": 8
    }
@@ -465,7 +885,7 @@
    },
    "gridPos": {
     "x": 12,
-    "y": 5,
+    "y": 32,
     "w": 12,
     "h": 8
    }
@@ -477,7 +897,7 @@
    "collapsed": false,
    "gridPos": {
     "x": 0,
-    "y": 13,
+    "y": 40,
     "w": 24,
     "h": 1
    },
@@ -534,7 +954,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 14,
+    "y": 41,
     "w": 12,
     "h": 8
    }
@@ -590,7 +1010,7 @@
    },
    "gridPos": {
     "x": 12,
-    "y": 14,
+    "y": 41,
     "w": 12,
     "h": 8
    }
@@ -689,7 +1109,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 22,
+    "y": 49,
     "w": 24,
     "h": 10
    }
@@ -749,7 +1169,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 32,
+    "y": 59,
     "w": 24,
     "h": 6
    }
@@ -818,7 +1238,7 @@
    },
    "gridPos": {
     "x": 0,
-    "y": 38,
+    "y": 65,
     "w": 24,
     "h": 6
    }

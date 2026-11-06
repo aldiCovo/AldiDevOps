@@ -1,0 +1,101 @@
+# Alloy finds the Pods on its node through the Kubernetes API, so it needs to list them.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: alloy
+  namespace: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: alloy
+rules:
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: alloy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: alloy
+subjects:
+  - kind: ServiceAccount
+    name: alloy
+    namespace: monitoring
+---
+# One Alloy per node, reading that node's container logs from its disk.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: alloy
+  namespace: monitoring
+  labels:
+    app: alloy
+spec:
+  selector:
+    matchLabels:
+      app: alloy
+  template:
+    metadata:
+      labels:
+        app: alloy
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "12345"
+    spec:
+      serviceAccountName: alloy
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: alloy
+          image: grafana/alloy:v1.21.3
+          args:
+            - run
+            - /etc/alloy/config.alloy
+            - --server.http.listen-addr=0.0.0.0:12345
+            # Where it remembers how far it read each file, so a restart doesn't send logs twice.
+            - --storage.path=/var/lib/alloy
+            - --disable-reporting
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          ports:
+            - containerPort: 12345
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 12345
+          # The log files belong to root.
+          securityContext:
+            runAsUser: 0
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alloy
+            - name: pod-logs
+              mountPath: /var/log/pods
+              readOnly: true
+            - name: state
+              mountPath: /var/lib/alloy
+      volumes:
+        - name: config
+          configMap:
+            name: alloy-config
+        - name: pod-logs
+          hostPath:
+            path: /var/log/pods
+        - name: state
+          hostPath:
+            path: /var/lib/aldi/alloy
+            type: DirectoryOrCreate

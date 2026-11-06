@@ -1,0 +1,80 @@
+// Alloy reads every container's log from AldiServer's disk and sends it to Loki, labelled
+// with its namespace, Pod, container and app. Changing this file restarts Alloy.
+
+// Only the Pods on this node, since each node's Alloy reads its own disk.
+discovery.kubernetes "pods" {
+  role = "pod"
+  selectors {
+    role  = "pod"
+    field = "spec.nodeName=" + sys.env("NODE_NAME")
+  }
+}
+
+discovery.relabel "pods" {
+  targets = discovery.kubernetes.pods.targets
+
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    target_label  = "namespace"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_name"]
+    target_label  = "pod"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_container_name"]
+    target_label  = "container"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_label_app"]
+    target_label  = "app"
+  }
+  // The kubelet writes each container's log to /var/log/pods/<namespace>_<pod>_<uid>/<container>/.
+  rule {
+    source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+    separator     = "/"
+    target_label  = "__path__"
+    replacement   = "/var/log/pods/*$1/*.log"
+  }
+}
+
+local.file_match "pods" {
+  path_targets = discovery.relabel.pods.output
+}
+
+loki.source.file "pods" {
+  targets    = local.file_match.pods.targets
+  forward_to = [loki.process.pods.receiver]
+}
+
+loki.process "pods" {
+  // Unwraps containerd's line format and joins lines it split.
+  stage.cri {}
+
+  // The shop's services log JSON with "level": "INFO", "WARN" or "ERROR". It becomes a
+  // lowercase label, so a search for errors only opens their streams. Other lines pass
+  // through without one.
+  stage.json {
+    expressions = { level = "level" }
+  }
+  stage.template {
+    source   = "level"
+    template = "{{ ToLower .Value }}"
+  }
+  stage.labels {
+    values = { level = "" }
+  }
+
+  // The file path only repeats the Pod and container.
+  stage.label_drop {
+    values = ["filename"]
+  }
+
+  forward_to = [loki.write.default.receiver]
+}
+
+loki.write "default" {
+  endpoint {
+    url = "http://loki.monitoring.svc:3100/loki/api/v1/push"
+  }
+}

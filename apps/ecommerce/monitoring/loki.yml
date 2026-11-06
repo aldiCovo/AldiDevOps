@@ -1,0 +1,63 @@
+# Loki keeps every container's log for 7 days on AldiServer's disk. One process does it all,
+# which is plenty for one server. Changing this file restarts Loki.
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9095
+  log_level: warn
+
+common:
+  path_prefix: /loki
+  replication_factor: 1
+  instance_addr: 127.0.0.1
+  ring:
+    kvstore:
+      store: inmemory
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+
+schema_config:
+  configs:
+    - from: "2026-11-01"
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+limits_config:
+  retention_period: 168h
+  ingestion_rate_mb: 8
+  ingestion_burst_size_mb: 16
+  # Lets Grafana's log pages show how many lines each service writes.
+  volume_enabled: true
+
+# Deletes logs older than retention_period.
+compactor:
+  working_directory: /loki/compactor
+  compaction_interval: 10m
+  retention_enabled: true
+  retention_delete_delay: 2h
+  delete_request_store: filesystem
+
+# Checks log-alert-rules.yml every minute and sends what fires to the same Alertmanager as
+# Prometheus, so log alerts reach Telegram too. Without a login, every rule belongs to the
+# tenant "fake", which is why the rules are mounted in /etc/loki/rules/fake.
+ruler:
+  storage:
+    type: local
+    local:
+      directory: /etc/loki/rules
+  rule_path: /loki/ruler
+  alertmanager_url: http://alertmanager.monitoring.svc:9093
+  evaluation_interval: 1m
+  ring:
+    kvstore:
+      store: inmemory
+
+analytics:
+  reporting_enabled: false
