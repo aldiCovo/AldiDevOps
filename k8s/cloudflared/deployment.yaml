@@ -6,7 +6,8 @@ metadata:
   labels:
     app: cloudflared
 spec:
-  replicas: 1
+  # Two connectors to the same tunnel: while one reconnects, Cloudflare sends visitors to the other.
+  replicas: 2
   selector:
     matchLabels:
       app: cloudflared
@@ -34,13 +35,23 @@ spec:
                 secretKeyRef:
                   name: cloudflared-token
                   key: token
+          # /healthcheck only asks whether cloudflared is running. /ready also needs the tunnel
+          # connected, and restarting cloudflared while it reconnects only starts the wait over.
           livenessProbe:
             httpGet:
-              path: /ready
+              path: /healthcheck
               port: 2000
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 3
             failureThreshold: 3
+          # Not ready while the tunnel is down, which kube-state-metrics shows and alerts on.
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 2000
+            periodSeconds: 10
+            timeoutSeconds: 3
           resources:
             requests:
               cpu: 20m
