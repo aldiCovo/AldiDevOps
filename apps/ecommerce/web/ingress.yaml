@@ -78,6 +78,14 @@ spec:
                 name: web
                 port:
                   number: 8080
+          # Checking voucher codes, which someone could try to guess.
+          - path: /api/vouchers/check
+            pathType: Exact
+            backend:
+              service:
+                name: web
+                port:
+                  number: 8080
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
