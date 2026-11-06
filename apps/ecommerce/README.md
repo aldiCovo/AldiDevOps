@@ -174,7 +174,7 @@ The Ingress in `web/` routes the domain, but nothing reaches it until Cloudflare
 
 The dashboards **Server**, **Kubernetes**, **Toko** and **Log**, in the AldiServer folder, come from [`monitoring/dashboards/`](monitoring/dashboards/) and can't be changed in Grafana's pages. To change one, edit its JSON in a PR. A dashboard made in Grafana is kept in its database instead.
 
-**Kubernetes** opens with a table of every service at once: CPU and its request, memory and its limit, network and restarts. **Log** shows the logs of the chosen services, filtered by level and by a case-insensitive regex, with error counts per service. Logs can also be searched in Grafana's **Explore** with the Loki data source, for example `{namespace="order", level="error"}` or `{app="catalog-service"} |= "sale"`.
+Both **Kubernetes** and **Log** have a **Grup** list above the namespaces: Toko (the shop's services and web pages), Tool toko (its databases, queues and search), Infrastruktur, CV, or Semua. The groups are written in each dashboard's JSON, so a new namespace is added there too. **Kubernetes** opens with a table of every service in the group: CPU and its request, memory and its limit, network and restarts. **Log** shows the logs of the chosen services, filtered by level and by a case-insensitive regex, with error counts per service. Logs can also be searched in Grafana's **Explore** with the Loki data source, for example `{namespace="order", level="error"}` or `{app="catalog-service"} |= "sale"`.
 
 A Pod with the annotations `prometheus.io/scrape: "true"` and `prometheus.io/port` is read automatically, at `prometheus.io/path` or `/metrics`.
 
