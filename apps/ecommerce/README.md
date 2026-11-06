@@ -206,18 +206,19 @@ kubectl port-forward -n monitoring svc/alertmanager 9093:9093
 
 ### Connect Telegram
 
-Run this once, on AldiServer, before ArgoCD syncs Alertmanager, or its Pod waits until the Secret exists. First make a bot by messaging `/newbot` to @BotFather in Telegram, then send any message to the new bot, so it can find your chat:
+Run this once, on AldiServer, before ArgoCD syncs Alertmanager, or its Pod waits until the Secret exists. First make a bot by messaging `/newbot` to @BotFather in Telegram. Then open the new bot by its exact username, tap **Start** and send it any message, so it can find your chat. Run this in your own SSH session, so the token isn't recorded anywhere else:
 
 ```bash
 read -rsp "Bot token: " TOKEN; echo
-CHAT_ID=$(curl -s "https://api.telegram.org/bot$TOKEN/getUpdates" | grep -o '"chat":{"id":-\?[0-9]*' | tail -1 | grep -o -- '-\?[0-9]*$')
+curl -s "https://api.telegram.org/bot$TOKEN/getMe" | jq -r .result.username
+CHAT_ID=$(curl -s "https://api.telegram.org/bot$TOKEN/getUpdates" | jq -r '[.. | objects | .chat? | objects | .id] | last // empty')
 echo "Chat ID: $CHAT_ID"
-kubectl create secret generic alertmanager-telegram -n monitoring \
+[ -n "$CHAT_ID" ] && kubectl create secret generic alertmanager-telegram -n monitoring \
   --from-literal=token="$TOKEN" --from-literal=chat_id="$CHAT_ID"
 unset TOKEN CHAT_ID
 ```
 
-If the chat ID comes out empty, send the bot another message and run it again. To change either later, delete the Secret, create it again, and restart Alertmanager with `kubectl rollout restart deploy/alertmanager -n monitoring`.
+The first line printed is the bot's username, which shows the token is right. If the chat ID comes out empty, the bot has had no message yet: send it one and run this again. To change either later, delete the Secret, create it again, and restart Alertmanager with `kubectl rollout restart deploy/alertmanager -n monitoring`.
 
 ### Create the Grafana login
 
