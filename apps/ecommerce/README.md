@@ -20,7 +20,7 @@ Everything for the shop, with one folder per service and per tool it uses.
 | [`elasticsearch/`](elasticsearch/) | Search index | ArgoCD, after the `elasticsearch-admin` Secret below exists |
 | [`nats/`](nats/) | Signals that an order changed | ArgoCD, after the Secrets below exist |
 | [`mailpit/`](mailpit/) | Catches the shop's emails, and delivers none | ArgoCD |
-| [`monitoring/`](monitoring/) | Prometheus and Grafana at `grafana.aldiab.ai.id`, for the server, the cluster and the shop | ArgoCD, after the `grafana-admin` Secret below exists |
+| [`monitoring/`](monitoring/) | Prometheus, Loki and Grafana at `grafana.aldiab.ai.id`, for the server, the cluster, the shop and their logs | ArgoCD, after the `grafana-admin` Secret below exists |
 
 Everything here belongs to one Application in ArgoCD, `ecommerce`, which deploys what [`kustomization.yaml`](kustomization.yaml) lists. Secrets, and what's inside the tools, such as databases, users and vhosts, are created by hand, because this repo is public.
 
@@ -168,9 +168,13 @@ The Ingress in `web/` routes the domain, but nothing reaches it until Cloudflare
 | nats-exporter | NATS connections and messages, from NATS's monitoring port 8222 |
 | postgres-exporter | Connections, commits and size of each database, logged in as the `monitoring` role |
 | Alertmanager | Sends the alerts Prometheus raises to Telegram, grouped, and again every 4 hours (24 for warnings) while they last. Its silences are forgotten when it restarts |
-| Grafana | The dashboards at `https://grafana.aldiab.ai.id`, with only an `admin` login. Its users and settings are in `/var/lib/aldi/grafana` |
+| Grafana | The dashboards and logs at `https://grafana.aldiab.ai.id`, with only an `admin` login. Its users and settings are in `/var/lib/aldi/grafana` |
+| Loki | Keeps every container's log for 7 days in `/var/lib/aldi/loki`, and checks the log alerts. It has no login, so it has no Ingress |
+| Alloy | Runs on each node, reads its containers' logs from `/var/log/pods` and sends them to Loki labelled with `namespace`, `pod`, `container`, `app` and, for JSON lines with a `level` field, `level` in lowercase |
 
-The dashboards **Server**, **Kubernetes** and **Toko**, in the AldiServer folder, come from [`monitoring/dashboards/`](monitoring/dashboards/) and can't be changed in Grafana's pages. To change one, edit its JSON in a PR. A dashboard made in Grafana is kept in its database instead.
+The dashboards **Server**, **Kubernetes**, **Toko** and **Log**, in the AldiServer folder, come from [`monitoring/dashboards/`](monitoring/dashboards/) and can't be changed in Grafana's pages. To change one, edit its JSON in a PR. A dashboard made in Grafana is kept in its database instead.
+
+**Kubernetes** opens with a table of every service at once: CPU and its request, memory and its limit, network and restarts. **Log** shows the logs of the chosen services, filtered by level and by a case-insensitive regex, with error counts per service. Logs can also be searched in Grafana's **Explore** with the Loki data source, for example `{namespace="order", level="error"}` or `{app="catalog-service"} |= "sale"`.
 
 A Pod with the annotations `prometheus.io/scrape: "true"` and `prometheus.io/port` is read automatically, at `prometheus.io/path` or `/metrics`.
 
@@ -199,6 +203,7 @@ The rules are in [`monitoring/alert-rules.yml`](monitoring/alert-rules.yml), eac
 | MemoryLow, CPUBusy | Under 10% memory free for 10 minutes, or CPU over 90% for 30 |
 | DNSLookupsFailing, DNSDown | Over 5% of the cluster's DNS lookups fail for 15 minutes, or over 50% for 5. Names outside the cluster go through the router, 10.10.0.1 |
 | AlertsNotSent | Alertmanager failed to deliver a notification |
+| ErrorLogsSpike | A namespace writes more than 5 lines with level `error` in 10 minutes, for 2 minutes. Loki checks this one, from [`monitoring/log-alert-rules.yml`](monitoring/log-alert-rules.yml), and sends it to the same Alertmanager |
 
 Firing alerts are listed in Prometheus at `/alerts`, and in Alertmanager, which also takes silences:
 

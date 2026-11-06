@@ -63,3 +63,35 @@ spec:
   resources:
     requests:
       storage: 1Gi
+---
+# Every container's log for 7 days. Loki deletes older ones itself.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: loki-data
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  claimRef:
+    namespace: monitoring
+    name: loki-data
+  hostPath:
+    path: /var/lib/aldi/loki
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: loki-data
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  volumeName: loki-data
+  resources:
+    requests:
+      storage: 10Gi

@@ -1,0 +1,15 @@
+# Alerts read from the logs by Loki's ruler, in the same form as alert-rules.yml. The level
+# label comes from the "level" field of a JSON line, lowercased by Alloy, so these count the
+# shop's slog errors. Summaries are plain text, without < or >, like alert-rules.yml.
+groups:
+  - name: logs
+    rules:
+      # The shop's services write no errors on a normal day, so a handful in 10 minutes is
+      # already unusual.
+      - alert: ErrorLogsSpike
+        expr: sum by (namespace) (count_over_time({level="error"}[10m])) > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.namespace }} menulis {{ $value | printf \"%.0f\" }} log error dalam 10 menit. Lihat dashboard Log di Grafana."

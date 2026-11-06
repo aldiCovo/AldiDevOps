@@ -27,7 +27,7 @@ resources:
 # doesn't restart any Pod.
 patches:
   - target:
-      name: (postgresql|rabbitmq|elasticsearch|nats|mailpit|monitoring|prometheus|grafana)(-.*)?
+      name: (postgresql|rabbitmq|elasticsearch|nats|mailpit|monitoring|prometheus|grafana|loki)(-.*)?
     patch: |-
       apiVersion: v1
       kind: Protected
