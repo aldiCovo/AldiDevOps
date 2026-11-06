@@ -148,6 +148,30 @@ groups:
         annotations:
           summary: "CPU AldiServer di atas 90% selama 30 menit."
 
+  # CoreDNS answers from its cache when the router, 10.10.0.1, is slow, so failed lookups mean
+  # the router has been gone longer than the cache can cover, or for names not seen before.
+  - name: dns
+    rules:
+      - alert: DNSLookupsFailing
+        expr: |
+          sum(rate(coredns_dns_responses_total{rcode="SERVFAIL"}[10m]))
+            / sum(rate(coredns_dns_responses_total[10m])) > 0.05
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value | humanizePercentage }} lookup DNS di cluster gagal selama 15 menit. Router 10.10.0.1 kemungkinan sering tidak menjawab."
+
+      - alert: DNSDown
+        expr: |
+          sum(rate(coredns_dns_responses_total{rcode="SERVFAIL"}[5m]))
+            / sum(rate(coredns_dns_responses_total[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $value | humanizePercentage }} lookup DNS di cluster gagal. Layanan yang memanggil internet, seperti cloudflared dan ArgoCD, ikut terganggu."
+
   - name: monitoring
     rules:
       # If Alertmanager can't reach Telegram, this can't reach Telegram either, but it shows
