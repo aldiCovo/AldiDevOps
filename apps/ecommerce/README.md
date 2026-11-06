@@ -166,6 +166,7 @@ The Ingress in `web/` routes the domain, but nothing reaches it until Cloudflare
 | RabbitMQ | Each queue's waiting and unacknowledged messages and its consumers, from the plugin on port 15692 |
 | nats-exporter | NATS connections and messages, from NATS's monitoring port 8222 |
 | postgres-exporter | Connections, commits and size of each database, logged in as the `monitoring` role |
+| Alertmanager | Sends the alerts Prometheus raises to Telegram, grouped, and again every 4 hours (24 for warnings) while they last. Its silences are forgotten when it restarts |
 | Grafana | The dashboards at `https://grafana.aldiab.ai.id`, with only an `admin` login. Its users and settings are in `/var/lib/aldi/grafana` |
 
 The dashboards **Server**, **Kubernetes** and **Toko**, in the AldiServer folder, come from [`monitoring/dashboards/`](monitoring/dashboards/) and can't be changed in Grafana's pages. To change one, edit its JSON in a PR. A dashboard made in Grafana is kept in its database instead.
@@ -177,6 +178,47 @@ To query Prometheus directly, run this on AldiServer and browse to `http://local
 ```bash
 kubectl port-forward -n monitoring svc/prometheus 9090:9090
 ```
+
+### Alerts
+
+The rules are in [`monitoring/alert-rules.yml`](monitoring/alert-rules.yml), each with a `critical` or `warning` severity and its Telegram text:
+
+| Alert | When |
+|---|---|
+| TargetDown | A metrics endpoint can't be read for 5 minutes |
+| DeploymentMissingReplicas, StatefulSetMissingReplicas | Fewer ready Pods than wanted for 10 minutes |
+| PodCrashLooping | A container stuck in CrashLoopBackOff or failing to pull its image for 5 minutes |
+| PodRestarting | More than 3 restarts in 30 minutes |
+| HighErrorRate | Over 5% of a service's requests answer 5xx for 10 minutes, with some traffic |
+| SlowResponses | A service's p95 latency is over 2 seconds for 15 minutes |
+| PostgreSQLDown, PostgreSQLTooManyConnections | PostgreSQL unreachable for 2 minutes, or over 80% of its connections in use |
+| NATSDown | No NATS numbers for 5 minutes |
+| RabbitMQQueueBacklog, RabbitMQQueueWithoutConsumer | Over 100 messages waiting for 10 minutes, or messages with no consumer for 5 |
+| DiskAlmostFull, DiskFull | Under 15% free for 10 minutes, or under 5% for 5 |
+| MemoryLow, CPUBusy | Under 10% memory free for 10 minutes, or CPU over 90% for 30 |
+| AlertsNotSent | Alertmanager failed to deliver a notification |
+
+Firing alerts are listed in Prometheus at `/alerts`, and in Alertmanager, which also takes silences:
+
+```bash
+kubectl port-forward -n monitoring svc/alertmanager 9093:9093
+```
+
+### Connect Telegram
+
+Run this once, on AldiServer, before ArgoCD syncs Alertmanager, or its Pod waits until the Secret exists. First make a bot by messaging `/newbot` to @BotFather in Telegram. Then open the new bot by its exact username, tap **Start** and send it any message, so it can find your chat. Run this in your own SSH session, so the token isn't recorded anywhere else:
+
+```bash
+read -rsp "Bot token: " TOKEN; echo
+curl -s "https://api.telegram.org/bot$TOKEN/getMe" | jq -r .result.username
+CHAT_ID=$(curl -s "https://api.telegram.org/bot$TOKEN/getUpdates" | jq -r '[.. | objects | .chat? | objects | .id] | last // empty')
+echo "Chat ID: $CHAT_ID"
+[ -n "$CHAT_ID" ] && kubectl create secret generic alertmanager-telegram -n monitoring \
+  --from-literal=token="$TOKEN" --from-literal=chat_id="$CHAT_ID"
+unset TOKEN CHAT_ID
+```
+
+The first line printed is the bot's username, which shows the token is right. If the chat ID comes out empty, the bot has had no message yet: send it one and run this again. To change either later, delete the Secret, create it again, and restart Alertmanager with `kubectl rollout restart deploy/alertmanager -n monitoring`.
 
 ### Create the Grafana login
 
