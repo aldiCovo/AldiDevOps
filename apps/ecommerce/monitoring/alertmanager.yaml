@@ -48,6 +48,9 @@ spec:
             - name: telegram
               mountPath: /etc/alertmanager/telegram
               readOnly: true
+            - name: heartbeat
+              mountPath: /etc/alertmanager/heartbeat
+              readOnly: true
             - name: data
               mountPath: /alertmanager
       volumes:
@@ -57,6 +60,9 @@ spec:
         - name: telegram
           secret:
             secretName: alertmanager-telegram
+        - name: heartbeat
+          secret:
+            secretName: alertmanager-heartbeat
         - name: data
           emptyDir: {}
 ---

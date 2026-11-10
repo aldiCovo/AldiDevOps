@@ -1,5 +1,6 @@
 # Where alerts go. The bot token and the chat ID come from the alertmanager-telegram Secret,
-# which is made by hand (see the README), so neither is in Git.
+# and the Healthchecks.io ping address from alertmanager-heartbeat. Both are made by hand
+# (see the README), so none of them is in Git.
 route:
   receiver: telegram
   # Alerts that start together arrive in one message.
@@ -9,6 +10,12 @@ route:
   # Still broken after this long, say so again.
   repeat_interval: 4h
   routes:
+    # The heartbeat, every minute or two, never to Telegram.
+    - matchers: [alertname="Watchdog"]
+      receiver: heartbeat
+      group_wait: 0s
+      group_interval: 1m
+      repeat_interval: 1m
     - matchers: [severity="warning"]
       receiver: telegram
       repeat_interval: 24h
@@ -21,6 +28,11 @@ receivers:
         send_resolved: true
         parse_mode: HTML
         message: '{{ template "telegram.aldi" . }}'
+
+  - name: heartbeat
+    webhook_configs:
+      - url_file: /etc/alertmanager/heartbeat/url
+        send_resolved: false
 
 templates:
   - /etc/alertmanager/config/*.tmpl
