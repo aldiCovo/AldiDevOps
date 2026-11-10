@@ -204,6 +204,7 @@ The rules are in [`monitoring/alert-rules.yml`](monitoring/alert-rules.yml), eac
 | MemoryLow, CPUBusy | Under 10% memory free for 10 minutes, or CPU over 90% for 30 |
 | DNSLookupsFailing, DNSDown | Over 5% of the cluster's DNS lookups fail for 15 minutes, or over 50% for 5. Names outside the cluster go through the router, 10.10.0.1 |
 | AlertsNotSent | Alertmanager failed to deliver a notification |
+| Watchdog | Always firing, as a heartbeat. It goes to Healthchecks.io instead of Telegram, see [Outside checks](#outside-checks) |
 | PacketLoss, PacketLossHigh | Over 5% of pings to the router or the internet lost for 10 minutes, or over 20% for 5 |
 | NetworkInterfaceErrors | The network card keeps counting send or receive errors for 15 minutes |
 | NetworkLinkSlow | The network card's link is under 1000 Mbps for 15 minutes, usually a bad cable or switch port |
@@ -230,6 +231,25 @@ unset TOKEN CHAT_ID
 ```
 
 The first line printed is the bot's username, which shows the token is right. If the chat ID comes out empty, the bot has had no message yet: send it one and run this again. To change either later, delete the Secret, create it again, and restart Alertmanager with `kubectl rollout restart deploy/alertmanager -n monitoring`.
+
+### Outside checks
+
+Alertmanager runs on AldiServer, so when the server, its network or the monitoring itself is down, no alert can leave it. On 9 November 2026 the server lost its network for 16 hours and Telegram stayed silent. Two free services outside watch for that, and message Telegram themselves:
+
+| Service | What it checks |
+|---|---|
+| [Healthchecks.io](https://healthchecks.io) | The Watchdog heartbeat. Alertmanager sends it every minute or two; if none comes for 10 minutes, the server, its network, Prometheus or Alertmanager is down |
+| [UptimeRobot](https://uptimerobot.com) | The public addresses every 5 minutes, through Cloudflare: `https://prastika.aldiab.ai.id`, `https://aldilukito.aldiab.ai.id` and `https://grafana.aldiab.ai.id/api/health`. This also catches cloudflared or Cloudflare failing while the server is fine |
+
+Neither is configured from Git. To set up Healthchecks.io: make a check with period 5 minutes and grace 5 minutes, add the Telegram integration in **Integrations**, and copy the check's ping URL. Then, before ArgoCD syncs Alertmanager, or its Pod waits until the Secret exists, run this in your own SSH session:
+
+```bash
+read -rsp "Healthchecks.io ping URL: " URL; echo
+kubectl create secret generic alertmanager-heartbeat -n monitoring --from-literal=url="$URL"
+unset URL
+```
+
+The URL is the only key to the check, so it stays out of Git. To change it, delete the Secret, create it again and restart Alertmanager with `kubectl rollout restart deploy/alertmanager -n monitoring`.
 
 ### Create the Grafana login
 
