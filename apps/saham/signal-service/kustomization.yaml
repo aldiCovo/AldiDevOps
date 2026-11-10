@@ -8,4 +8,4 @@ resources:
 # build.sh in aldiCovo/AldiApps writes newTag, the commit the image was built from.
 images:
   - name: ghcr.io/aldicovo/signal-service
-    newTag: "b2d325b"
+    newTag: "fdd858e"
