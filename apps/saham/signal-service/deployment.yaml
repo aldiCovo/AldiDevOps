@@ -1,0 +1,70 @@
+# No Service: nothing calls it. It runs its job after each trading day's close and sends the
+# brief to Telegram. To run it by hand, port-forward to the Pod and POST /run (see the README).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signal-service
+  labels:
+    app: signal-service
+spec:
+  replicas: 1
+  # One job at a time: the old Pod stops before the new one starts.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: signal-service
+  template:
+    metadata:
+      # Prometheus reads /metrics on this port, which no Service routes.
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9091"
+      labels:
+        app: signal-service
+    spec:
+      containers:
+        - name: signal-service
+          image: ghcr.io/aldicovo/signal-service
+          ports:
+            - containerPort: 8080
+          env:
+            # pgx reads the password from PGPASSWORD, so the address holds no secret.
+            - name: DATABASE_URL
+              value: postgres://saham@postgresql:5432/saham?sslmode=disable
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: saham-postgresql
+                  key: password
+            # Its own bot, apart from the server alerts. Optional: without it the brief is
+            # only logged.
+            - name: TELEGRAM_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: saham-telegram
+                  key: token
+                  optional: true
+            - name: TELEGRAM_CHAT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: saham-telegram
+                  key: chat_id
+                  optional: true
+            # After IDX's 16:00 close, once Yahoo has the day's final prices.
+            - name: RUN_AT
+              value: "17:00"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              memory: 256Mi

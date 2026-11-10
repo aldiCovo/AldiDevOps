@@ -1,0 +1,20 @@
+# The stock-signal project, kept apart from the shop. Its namespace is created by hand, because
+# its Secrets must exist first, and because a namespace owned by ArgoCD could take them with it.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: saham
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/aldiCovo/AldiDevOps.git
+    targetRevision: main
+    path: apps/saham
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: saham
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

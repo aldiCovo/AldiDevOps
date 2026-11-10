@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Everything the saham Application in ArgoCD deploys, all in the saham namespace.
+namespace: saham
+
+resources:
+  - postgresql
+  - signal-service
+
+# PostgreSQL starts before the service. ArgoCD never deletes its objects, even if they leave
+# Git or the Application is deleted, because the paper-trading history can't be rebuilt.
+patches:
+  - target:
+      name: postgresql(-.*)?
+    patch: |-
+      apiVersion: v1
+      kind: Protected
+      metadata:
+        name: protected
+        annotations:
+          argocd.argoproj.io/sync-wave: "-1"
+          argocd.argoproj.io/sync-options: Prune=false,Delete=false
