@@ -5,7 +5,7 @@ A personal LQ45 market brief, kept apart from the shop in its own ArgoCD Applica
 | Folder | What |
 | --- | --- |
 | [`postgresql/`](postgresql/) | PostgreSQL 18 for the paper trades, momentum months and sent briefs. Data on AldiServer at `/var/lib/aldi/saham-postgresql`. |
-| [`signal-service/`](signal-service/) | Reads LQ45 and IHSG prices from Yahoo after each trading day (17:00 WIB), paper-trades every rule against random entries, and sends the brief to Telegram. Code in `aldiCovo/AldiApps`, `saham/signal-service`. |
+| [`signal-service/`](signal-service/) | Reads LQ45 and IHSG prices from Yahoo after each trading day (17:00 WIB), paper-trades every rule against random entries, and sends the brief to Telegram. Its web pages are at **https://saham.aldiab.ai.id**, behind a password. Code in `aldiCovo/AldiApps`, `saham/signal-service`. |
 
 The rules are a screener, not advice: none of them beat costs in the backtest. The paper trading is there to see whether any does from now on.
 
@@ -29,6 +29,20 @@ kubectl apply -f k8s/argocd/saham-application.yaml
 ```
 
 The image `ghcr.io/aldicovo/signal-service` must be public on GitHub, as the shop's are.
+
+## Web pages
+
+The pages (market, LQ45, paper trading, momentum) are on the service's port 8081, which the Ingress reaches. The job's own routes, `POST /run` and `/api/latest`, stay on port 8080, which no Service routes. The pages are off until their password exists:
+
+```sh
+read -s UI_PASSWORD
+kubectl -n saham create secret generic saham-ui --from-literal=password="$UI_PASSWORD"
+kubectl -n saham rollout restart deployment signal-service
+```
+
+Changing the password (delete and create the Secret, then restart) logs every browser out. Wrong passwords are limited to 10 a minute per visitor.
+
+In the Cloudflare dashboard, add a Public Hostname to the tunnel: `saham.aldiab.ai.id`, type `HTTP`, service `traefik.traefik.svc.cluster.local:80`, the same as the shop's.
 
 ## Day to day
 

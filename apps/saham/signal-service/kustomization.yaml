@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - deployment.yaml
+  - web.yaml
 
 # build.sh in aldiCovo/AldiApps writes newTag, the commit the image was built from.
 images:
