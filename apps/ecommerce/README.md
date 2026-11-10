@@ -234,12 +234,12 @@ The first line printed is the bot's username, which shows the token is right. If
 
 ### Outside checks
 
-Alertmanager runs on AldiServer, so when the server, its network or the monitoring itself is down, no alert can leave it. On 9 November 2026 the server lost its network for 16 hours and Telegram stayed silent. Two free services outside watch for that, and message Telegram themselves:
+Alertmanager runs on AldiServer, so when the server, its network or the monitoring itself is down, no alert can leave it. On 9 November 2026 the server lost its network for 16 hours and Telegram stayed silent. Two free services outside watch for that and send their own notifications:
 
 | Service | What it checks |
 |---|---|
-| [Healthchecks.io](https://healthchecks.io) | The Watchdog heartbeat. Alertmanager sends it every minute or two; if none comes for 10 minutes, the server, its network, Prometheus or Alertmanager is down |
-| [UptimeRobot](https://uptimerobot.com) | The public addresses every 5 minutes, through Cloudflare: `https://prastika.aldiab.ai.id`, `https://aldilukito.aldiab.ai.id` and `https://grafana.aldiab.ai.id/api/health`. This also catches cloudflared or Cloudflare failing while the server is fine |
+| [Healthchecks.io](https://healthchecks.io) | The Watchdog heartbeat. Alertmanager sends it every minute or two; if none comes for 10 minutes, the server, its network, Prometheus or Alertmanager is down. It messages Telegram |
+| [UptimeRobot](https://uptimerobot.com) | The public addresses every 5 minutes, through Cloudflare: `https://prastika.aldiab.ai.id`, `https://prastika.aldiab.ai.id/admin`, `https://aldilukito.aldiab.ai.id` and `https://grafana.aldiab.ai.id/api/health`. This also catches cloudflared or Cloudflare failing while the server is fine. Its free plan sends email and pushes to the UptimeRobot phone app; Telegram needs a paid plan |
 
 Neither is configured from Git. To set up Healthchecks.io: make a check with period 5 minutes and grace 5 minutes, add the Telegram integration in **Integrations**, and copy the check's ping URL. Then, before ArgoCD syncs Alertmanager, or its Pod waits until the Secret exists, run this in your own SSH session:
 
