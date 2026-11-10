@@ -1,5 +1,6 @@
-# No Service: nothing calls it. It runs its job after each trading day's close and sends the
-# brief to Telegram. To run it by hand, port-forward to the Pod and POST /run (see the README).
+# It runs its job after each trading day's close and sends the brief to Telegram. Its web pages
+# are on port 8081 (see web.yaml). To run the job by hand, port-forward to port 8080 and POST /run
+# (see the README); no Service routes that port.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,6 +29,8 @@ spec:
           image: ghcr.io/aldicovo/signal-service
           ports:
             - containerPort: 8080
+            - name: web
+              containerPort: 8081
           env:
             # pgx reads the password from PGPASSWORD, so the address holds no secret.
             - name: DATABASE_URL
@@ -50,6 +53,13 @@ spec:
                 secretKeyRef:
                   name: saham-telegram
                   key: chat_id
+                  optional: true
+            # The web pages' password. Optional: without it the pages are off.
+            - name: UI_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: saham-ui
+                  key: password
                   optional: true
             # After IDX's 16:00 close, once Yahoo has the day's final prices.
             - name: RUN_AT

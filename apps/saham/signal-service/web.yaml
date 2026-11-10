@@ -1,0 +1,66 @@
+# The web pages at saham.aldiab.ai.id, from signal-service's second port. That port has only
+# the pages, behind a password; POST /run and /api/latest stay on 8080, which no Service routes.
+apiVersion: v1
+kind: Service
+metadata:
+  name: signal-service
+spec:
+  selector:
+    app: signal-service
+  ports:
+    - name: web
+      port: 80
+      targetPort: 8081
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: signal-service
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: saham.aldiab.ai.id
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: signal-service
+                port:
+                  number: 80
+---
+# Password tries are limited per visitor, on top of the service's 1-second wait after a wrong one.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: signal-service-login
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: saham-login-rate-limit@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: saham.aldiab.ai.id
+      http:
+        paths:
+          - path: /login
+            pathType: Exact
+            backend:
+              service:
+                name: signal-service
+                port:
+                  number: 80
+---
+# Everything reaches Traefik from cloudflared, so the visitor's address must come from the
+# header Cloudflare sets, or all visitors would share one limit.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: login-rate-limit
+spec:
+  rateLimit:
+    average: 10
+    period: 1m
+    burst: 10
+    sourceCriterion:
+      requestHeaderName: Cf-Connecting-Ip
