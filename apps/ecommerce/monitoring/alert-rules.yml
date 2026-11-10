@@ -172,6 +172,25 @@ groups:
         annotations:
           summary: "{{ $value | humanizePercentage }} lookup DNS di cluster gagal. Layanan yang memanggil internet, seperti cloudflared dan ArgoCD, ikut terganggu."
 
+  # The saham project's daily job. It runs every weekday at 17:00 WIB, a holiday counting as a
+  # run that found nothing to do, so the longest normal gap is Friday to Monday.
+  - name: saham
+    rules:
+      - alert: SahamJobFailed
+        expr: increase(saham_job_runs_total{result="error"}[1h]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "Job harian saham gagal, dicoba lagi tiap 15 menit. Lihat log signal-service di namespace saham."
+
+      # 80 hours: a weekend plus the retries, so a missed Monday shows by Tuesday night.
+      - alert: SahamJobStale
+        expr: time() - saham_job_last_ok_timestamp_seconds > 80 * 3600 and saham_job_last_ok_timestamp_seconds > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "Job harian saham tidak berhasil jalan selama {{ $value | humanizeDuration }}. Ringkasan pasar tidak terkirim."
+
   - name: monitoring
     rules:
       # Always firing. Alertmanager sends it to Healthchecks.io, outside AldiServer, every few

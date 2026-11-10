@@ -12,4 +12,4 @@ Configuration for the single-node kubeadm cluster on AldiServer.
 | [`coredns/configmap.yaml`](coredns/configmap.yaml) | `kubectl apply -f k8s/coredns/configmap.yaml`. It replaces kubeadm's CoreDNS settings, so check it again after a `kubeadm upgrade` |
 | [`cloudflared/`](cloudflared/) | `kubectl apply -f k8s/cloudflared/namespace.yaml`, create the `cloudflared-token` Secret, then `kubectl apply -f k8s/cloudflared/deployment.yaml` |
 
-These files are applied by hand. ArgoCD has two Applications: `cv` for [`apps/cvaldi/`](../apps/cvaldi/), and `ecommerce` for every microservice and tool in [`apps/ecommerce/`](../apps/ecommerce/).
+These files are applied by hand. ArgoCD has three Applications, kept apart: `cv` for [`apps/cvaldi/`](../apps/cvaldi/), `ecommerce` for every microservice and tool in [`apps/ecommerce/`](../apps/ecommerce/), and `saham` for the stock-signal project in [`apps/saham/`](../apps/saham/). The monitoring in `ecommerce` watches all three.

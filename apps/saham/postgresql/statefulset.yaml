@@ -1,0 +1,74 @@
+# The saham project's own PostgreSQL, separate from the shop's. It holds the paper trades, the
+# momentum months and the briefs sent; prices are read from Yahoo on each run.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+spec:
+  clusterIP: None
+  selector:
+    app: postgresql
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql
+  labels:
+    app: postgresql
+spec:
+  serviceName: postgresql
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql
+  template:
+    metadata:
+      labels:
+        app: postgresql
+    spec:
+      # Lets PostgreSQL finish its shutdown checkpoint.
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: postgresql
+          image: postgres:18.6-alpine3.24
+          ports:
+            - containerPort: 5432
+          env:
+            # One role and one database, both named saham. The Secret is created by hand so the
+            # password never enters this public repo.
+            - name: POSTGRES_USER
+              value: saham
+            - name: POSTGRES_DB
+              value: saham
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: saham-postgresql
+                  key: password
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "saham", "-h", "127.0.0.1"]
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "saham", "-h", "127.0.0.1"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            # PostgreSQL 18 images keep their data below this folder, in a per-version subfolder.
+            - name: data
+              mountPath: /var/lib/postgresql
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: postgresql-data
