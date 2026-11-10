@@ -1,0 +1,50 @@
+# Reads the saham PostgreSQL's numbers for Prometheus: whether it answers, its size and its
+# connections. The shop's exporter in the monitoring namespace only reaches the shop's database.
+# It logs in as saham with the password already in the saham-postgresql Secret, so no new Secret
+# is needed. Prometheus finds it by the annotations, like signal-service.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-exporter
+  labels:
+    app: postgres-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-exporter
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9187"
+      labels:
+        app: postgres-exporter
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      containers:
+        - name: postgres-exporter
+          image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
+          args:
+            - --collector.database
+            - --collector.stat_database
+          env:
+            - name: DATA_SOURCE_URI
+              value: postgresql:5432/saham?sslmode=disable
+            - name: DATA_SOURCE_USER
+              value: saham
+            - name: DATA_SOURCE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: saham-postgresql
+                  key: password
+          ports:
+            - containerPort: 9187
+          resources:
+            requests:
+              cpu: 10m
+              memory: 24Mi
+            limits:
+              memory: 96Mi

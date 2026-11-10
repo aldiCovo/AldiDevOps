@@ -79,15 +79,15 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "PostgreSQL tidak bisa dihubungi selama 2 menit."
+          summary: "PostgreSQL {{ with $labels.namespace }}{{ . }}{{ else }}toko{{ end }} tidak bisa dihubungi selama 2 menit."
 
       - alert: PostgreSQLTooManyConnections
-        expr: sum(pg_stat_database_numbackends) / max(pg_settings_max_connections) > 0.8
+        expr: sum by (namespace) (pg_stat_database_numbackends) / max by (namespace) (pg_settings_max_connections) > 0.8
         for: 10m
         labels:
           severity: warning
         annotations:
-          summary: "PostgreSQL memakai {{ $value | humanizePercentage }} dari batas koneksinya."
+          summary: "PostgreSQL {{ with $labels.namespace }}{{ . }}{{ else }}toko{{ end }} memakai {{ $value | humanizePercentage }} dari batas koneksinya."
 
       # The exporter keeps answering when NATS is gone, but without NATS's numbers.
       - alert: NATSDown

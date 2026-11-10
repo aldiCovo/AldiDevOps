@@ -7,6 +7,7 @@ namespace: saham
 resources:
   - postgresql
   - signal-service
+  - postgres-exporter.yaml
 
 # PostgreSQL starts before the service. ArgoCD never deletes its objects, even if they leave
 # Git or the Application is deleted, because the paper-trading history can't be rebuilt.

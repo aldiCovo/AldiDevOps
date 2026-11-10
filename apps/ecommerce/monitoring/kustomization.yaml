@@ -49,6 +49,7 @@ configMapGenerator:
       - dashboards/kubernetes.json
       - dashboards/toko.json
       - dashboards/log.json
+      - dashboards/saham.json
   - name: blackbox-config
     namespace: monitoring
     files:
