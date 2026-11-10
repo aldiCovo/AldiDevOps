@@ -5,6 +5,7 @@ A personal LQ45 market brief, kept apart from the shop in its own ArgoCD Applica
 | Folder | What |
 | --- | --- |
 | [`postgresql/`](postgresql/) | PostgreSQL 18 for the paper trades, momentum months and sent briefs. Data on AldiServer at `/var/lib/aldi/saham-postgresql`. |
+| [`postgres-exporter.yaml`](postgres-exporter.yaml) | Reads the database's numbers for Prometheus, logging in with the `saham-postgresql` Secret. |
 | [`signal-service/`](signal-service/) | Reads LQ45 and IHSG prices from Yahoo after each trading day (17:00 WIB), paper-trades every rule against random entries, and sends the brief to Telegram. Its web pages are at **https://saham.aldiab.ai.id**, behind a password. Code in `aldiCovo/AldiApps`, `saham/signal-service`. |
 
 The rules are a screener, not advice: none of them beat costs in the backtest. The paper trading is there to see whether any does from now on.
@@ -55,4 +56,4 @@ curl -s localhost:8080/api/latest
 curl -X POST 'localhost:8080/run?force=1'
 ```
 
-Prometheus reads the job's metrics. `SahamJobFailed` goes to Telegram when a run fails, and `SahamJobStale` when none has worked for 80 hours. The Grafana dashboards **Kubernetes** and **Log** show the namespace under the group **Saham**.
+Prometheus reads the job's metrics. `SahamJobFailed` goes to Telegram when a run fails, and `SahamJobStale` when none has worked for 80 hours. `PostgreSQLDown` covers this database too, named by its namespace. Grafana's **Saham** dashboard shows the job, the web pages, the database, memory and the log; **Kubernetes** and **Log** show the namespace under the group **Saham**, and **Toko** leaves it out.

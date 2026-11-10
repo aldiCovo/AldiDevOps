@@ -29,7 +29,7 @@
    "targets": [
     {
      "refId": "A",
-     "expr": "sum(rate(http_requests_total{job=\"pods\",route!~\"GET /(healthz|readyz)\"}[5m]))",
+     "expr": "sum(rate(http_requests_total{job=\"pods\",namespace!=\"saham\",route!~\"GET /(healthz|readyz)\"}[5m]))",
      "instant": true,
      "datasource": {
       "type": "prometheus",
@@ -85,7 +85,7 @@
    "targets": [
     {
      "refId": "A",
-     "expr": "100 * (sum(rate(http_requests_total{job=\"pods\",route!~\"GET /(healthz|readyz)\",code=~\"5..\"}[5m])) or vector(0)) / clamp_min(sum(rate(http_requests_total{job=\"pods\",route!~\"GET /(healthz|readyz)\"}[5m])) or vector(0), 1e-9)",
+     "expr": "100 * (sum(rate(http_requests_total{job=\"pods\",namespace!=\"saham\",route!~\"GET /(healthz|readyz)\",code=~\"5..\"}[5m])) or vector(0)) / clamp_min(sum(rate(http_requests_total{job=\"pods\",namespace!=\"saham\",route!~\"GET /(healthz|readyz)\"}[5m])) or vector(0), 1e-9)",
      "instant": true,
      "datasource": {
       "type": "prometheus",
@@ -149,7 +149,7 @@
    "targets": [
     {
      "refId": "A",
-     "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"pods\",route!~\"GET /(healthz|readyz)\"}[5m])))",
+     "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"pods\",namespace!=\"saham\",route!~\"GET /(healthz|readyz)\"}[5m])))",
      "instant": true,
      "datasource": {
       "type": "prometheus",
@@ -333,7 +333,7 @@
    "targets": [
     {
      "refId": "A",
-     "expr": "sum(pg_stat_database_numbackends{datname!~\"template.*\"})",
+     "expr": "sum(pg_stat_database_numbackends{job=\"postgresql\",datname!~\"template.*\"})",
      "instant": true,
      "datasource": {
       "type": "prometheus",
@@ -410,7 +410,7 @@
    "targets": [
     {
      "refId": "A",
-     "expr": "sum by (app) (rate(http_requests_total{job=\"pods\",route!~\"GET /(healthz|readyz)\"}[5m]))",
+     "expr": "sum by (app) (rate(http_requests_total{job=\"pods\",namespace!=\"saham\",route!~\"GET /(healthz|readyz)\"}[5m]))",
      "legendFormat": "{{app}}",
      "datasource": {
       "type": "prometheus",
@@ -466,7 +466,7 @@
    "targets": [
     {
      "refId": "A",
-     "expr": "sum by (app) (rate(http_requests_total{job=\"pods\",route!~\"GET /(healthz|readyz)\",code=~\"5..\"}[5m]))",
+     "expr": "sum by (app) (rate(http_requests_total{job=\"pods\",namespace!=\"saham\",route!~\"GET /(healthz|readyz)\",code=~\"5..\"}[5m]))",
      "legendFormat": "{{app}}",
      "datasource": {
       "type": "prometheus",
@@ -522,7 +522,7 @@
    "targets": [
     {
      "refId": "A",
-     "expr": "histogram_quantile(0.95, sum by (app, le) (rate(http_request_duration_seconds_bucket{job=\"pods\",route!~\"GET /(healthz|readyz)\"}[5m])))",
+     "expr": "histogram_quantile(0.95, sum by (app, le) (rate(http_request_duration_seconds_bucket{job=\"pods\",namespace!=\"saham\",route!~\"GET /(healthz|readyz)\"}[5m])))",
      "legendFormat": "{{app}}",
      "datasource": {
       "type": "prometheus",
@@ -578,7 +578,7 @@
    "targets": [
     {
      "refId": "A",
-     "expr": "sum by (app, code) (rate(http_requests_total{job=\"pods\",route!~\"GET /(healthz|readyz)\"}[5m]))",
+     "expr": "sum by (app, code) (rate(http_requests_total{job=\"pods\",namespace!=\"saham\",route!~\"GET /(healthz|readyz)\"}[5m]))",
      "legendFormat": "{{app}} {{code}}",
      "datasource": {
       "type": "prometheus",
@@ -634,7 +634,7 @@
    "targets": [
     {
      "refId": "A",
-     "expr": "topk(15, histogram_quantile(0.95, sum by (app, route, le) (rate(http_request_duration_seconds_bucket{job=\"pods\",route!~\"GET /(healthz|readyz)\"}[1h]))) > 0)",
+     "expr": "topk(15, histogram_quantile(0.95, sum by (app, route, le) (rate(http_request_duration_seconds_bucket{job=\"pods\",namespace!=\"saham\",route!~\"GET /(healthz|readyz)\"}[1h]))) > 0)",
      "instant": true,
      "format": "table",
      "datasource": {
@@ -997,7 +997,7 @@
    "targets": [
     {
      "refId": "A",
-     "expr": "sum by (datname) (pg_stat_database_numbackends{datname!~\"template.*\"})",
+     "expr": "sum by (datname) (pg_stat_database_numbackends{job=\"postgresql\",datname!~\"template.*\"})",
      "legendFormat": "{{datname}}",
      "datasource": {
       "type": "prometheus",
@@ -1053,7 +1053,7 @@
    "targets": [
     {
      "refId": "A",
-     "expr": "sum by (datname) (rate(pg_stat_database_xact_commit{datname!~\"template.*\"}[5m]))",
+     "expr": "sum by (datname) (rate(pg_stat_database_xact_commit{job=\"postgresql\",datname!~\"template.*\"}[5m]))",
      "legendFormat": "{{datname}}",
      "datasource": {
       "type": "prometheus",
@@ -1109,7 +1109,7 @@
    "targets": [
     {
      "refId": "A",
-     "expr": "sum by (datname) (pg_database_size_bytes{datname!~\"template.*\"})",
+     "expr": "sum by (datname) (pg_database_size_bytes{job=\"postgresql\",datname!~\"template.*\"})",
      "legendFormat": "{{datname}}",
      "datasource": {
       "type": "prometheus",
@@ -1178,7 +1178,7 @@
    "targets": [
     {
      "refId": "A",
-     "expr": "sum by (app) (go_memstats_heap_inuse_bytes{job=\"pods\"})",
+     "expr": "sum by (app) (go_memstats_heap_inuse_bytes{job=\"pods\",namespace!=\"saham\"})",
      "legendFormat": "{{app}}",
      "datasource": {
       "type": "prometheus",
@@ -1234,7 +1234,7 @@
    "targets": [
     {
      "refId": "A",
-     "expr": "sum by (app) (go_goroutines{job=\"pods\"})",
+     "expr": "sum by (app) (go_goroutines{job=\"pods\",namespace!=\"saham\"})",
      "legendFormat": "{{app}}",
      "datasource": {
       "type": "prometheus",
