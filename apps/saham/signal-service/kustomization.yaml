@@ -7,4 +7,4 @@ resources:
 # build.sh in aldiCovo/AldiApps writes newTag, the commit the image was built from.
 images:
   - name: ghcr.io/aldicovo/signal-service
-    newTag: "unbuilt"
+    newTag: "93cc8fa"
