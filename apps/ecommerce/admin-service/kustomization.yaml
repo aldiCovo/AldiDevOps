@@ -11,4 +11,4 @@ resources:
 # build.sh in aldiCovo/AldiApps writes newTag, the commit the image was built from.
 images:
   - name: ghcr.io/aldicovo/admin-service
-    newTag: "8cb4095"
+    newTag: "10c23c2"
