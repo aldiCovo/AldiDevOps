@@ -16,6 +16,7 @@ resources:
   - realtime-service
   - notification-service
   - cart-service
+  - chat-service
   - web
   - admin-service
   - web-admin

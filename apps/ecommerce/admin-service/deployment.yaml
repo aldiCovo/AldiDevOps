@@ -56,6 +56,13 @@ spec:
                 secretKeyRef:
                   name: admin-user-admin-token
                   key: token
+            - name: CHAT_URL
+              value: http://chat-service.chat.svc:8080
+            - name: CHAT_INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: admin-chat-token
+                  key: token
             - name: PHOTOS_DIR
               value: /photos
           volumeMounts:

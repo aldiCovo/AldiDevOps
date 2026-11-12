@@ -33,7 +33,7 @@ ArgoCD does apply a change to a tool as soon as it's merged, and most changes to
 Each service keeps its own folder, namespace and image tag. The namespaces are created by hand, because the Secrets below must exist before anything that uses them starts:
 
 ```bash
-for NAMESPACE in postgresql rabbitmq elasticsearch nats mailpit monitoring catalog search user order payment realtime notification cart web admin web-admin; do
+for NAMESPACE in postgresql rabbitmq elasticsearch nats mailpit monitoring catalog search user order payment realtime notification cart chat web admin web-admin; do
   kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 done
 kubectl apply -f k8s/argocd/ecommerce-application.yaml
@@ -144,6 +144,30 @@ USER_ADMIN_TOKEN=$(openssl rand -hex 32)
 kubectl create secret generic admin-user-admin-token -n admin --from-literal=token="$USER_ADMIN_TOKEN"
 kubectl create secret generic user-admin-token -n user --from-literal=token="$USER_ADMIN_TOKEN"
 unset USER_ADMIN_TOKEN
+```
+
+### Add the database, tokens and NATS password for chat-service
+
+Run this once, on AldiServer, before ArgoCD syncs chat-service. It makes the database, the token admin-service uses to reach chat-service, and the NATS user chat-service sends signals with. NATS restarts with the new user when ArgoCD syncs, and until the `chat` key exists in `nats-passwords` the new NATS Pod waits:
+
+```bash
+kubectl create namespace chat --dry-run=client -o yaml | kubectl apply -f -
+DB_PASSWORD=$(openssl rand -hex 24)
+NATS_PASSWORD=$(openssl rand -hex 24)
+TOKEN=$(openssl rand -hex 32)
+kubectl exec -i -n postgresql postgresql-0 -- psql -U postgres -v ON_ERROR_STOP=1 -v password="$DB_PASSWORD" <<'SQL'
+CREATE ROLE chat LOGIN PASSWORD :'password';
+CREATE DATABASE chat OWNER chat;
+SQL
+kubectl create secret generic chat-database -n chat \
+  --from-literal=url="postgres://chat:$DB_PASSWORD@postgresql.postgresql.svc:5432/chat?sslmode=disable"
+kubectl create secret generic chat-nats -n chat \
+  --from-literal=url="nats://chat:$NATS_PASSWORD@nats.nats.svc:4222"
+kubectl patch secret nats-passwords -n nats --type merge \
+  -p "{\"stringData\":{\"chat\":\"$NATS_PASSWORD\"}}"
+kubectl create secret generic chat-internal-token -n chat --from-literal=token="$TOKEN"
+kubectl create secret generic admin-chat-token -n admin --from-literal=token="$TOKEN"
+unset DB_PASSWORD NATS_PASSWORD TOKEN
 ```
 
 ### Photos

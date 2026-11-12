@@ -1,5 +1,5 @@
-# Each user can only do its own job: order-service sends signals and realtime-service reads
-# them. The passwords come from the Secret, so they never enter this public repo.
+# Each user can only do its own job: order-service and chat-service send signals and
+# realtime-service reads them. The passwords come from the Secret, so they never enter this public repo.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -25,7 +25,15 @@ data:
           password: $REALTIME_PASSWORD
           permissions: {
             publish: { deny: ">" }
-            subscribe: { allow: "orders.*" }
+            subscribe: { allow: ["orders.*", "chat.*"] }
+          }
+        }
+        {
+          user: chat
+          password: $CHAT_PASSWORD
+          permissions: {
+            publish: { allow: "chat.*" }
+            subscribe: { deny: ">" }
           }
         }
       ]
@@ -87,6 +95,11 @@ spec:
                 secretKeyRef:
                   name: nats-passwords
                   key: realtime
+            - name: CHAT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nats-passwords
+                  key: chat
           volumeMounts:
             - name: config
               mountPath: /etc/nats

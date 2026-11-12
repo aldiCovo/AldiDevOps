@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-service
+  labels:
+    app: chat-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chat-service
+  template:
+    metadata:
+      # Prometheus reads /metrics on this port, which no Service routes.
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9091"
+      labels:
+        app: chat-service
+    spec:
+      containers:
+        - name: chat-service
+          image: ghcr.io/aldicovo/chat-service
+          ports:
+            - containerPort: 8080
+          env:
+            # The Secrets are created by hand so the passwords never enter this public repo.
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: chat-database
+                  key: url
+            - name: NATS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: chat-nats
+                  key: url
+            - name: INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: chat-internal-token
+                  key: token
+            - name: USER_URL
+              value: http://user-service.user.svc:8080
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi

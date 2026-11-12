@@ -22,7 +22,7 @@
     "label": "Grup",
     "type": "custom",
     "description": "Toko: service toko dan web. Tool toko: database, antrean dan pencarian yang dipakai toko. Namespace baru perlu ditambahkan di sini.",
-    "query": "Semua : .+, Toko : admin|cart|catalog|notification|order|payment|realtime|search|user|web|web-admin, Tool toko : elasticsearch|mailpit|nats|postgresql|rabbitmq, Infrastruktur : argocd|cloudflared|default|kube-.*|metallb-system|monitoring|traefik, CV : cv, Saham : saham",
+    "query": "Semua : .+, Toko : admin|cart|catalog|chat|notification|order|payment|realtime|search|user|web|web-admin, Tool toko : elasticsearch|mailpit|nats|postgresql|rabbitmq, Infrastruktur : argocd|cloudflared|default|kube-.*|metallb-system|monitoring|traefik, CV : cv, Saham : saham",
     "options": [
      {
       "text": "Semua",
@@ -31,7 +31,7 @@
      },
      {
       "text": "Toko",
-      "value": "admin|cart|catalog|notification|order|payment|realtime|search|user|web|web-admin",
+      "value": "admin|cart|catalog|chat|notification|order|payment|realtime|search|user|web|web-admin",
       "selected": false
      },
      {
