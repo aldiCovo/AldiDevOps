@@ -42,6 +42,11 @@ spec:
                   key: token
             - name: USER_URL
               value: http://user-service.user.svc:8080
+            # Attached products and orders are checked here; orders with the customer's own token.
+            - name: CATALOG_URL
+              value: http://catalog-service.catalog.svc:8080
+            - name: ORDER_URL
+              value: http://order-service.order.svc:8080
           readinessProbe:
             httpGet:
               path: /readyz
