@@ -47,10 +47,17 @@ spec:
               value: http://catalog-service.catalog.svc:8080
             - name: ORDER_URL
               value: http://order-service.order.svc:8080
-            # The AI assistant that answers customers first. It reads products through search;
-            # without the key it stays off and every chat goes to the admins.
+            # The bot's menu answers from the shop's data. Free text goes to the AI chosen on
+            # the admin page, which reads products through search: Gemini (free tier) or Claude
+            # (paid). Without the chosen AI's key, free text goes to the admins.
             - name: SEARCH_URL
               value: http://search-service.search.svc:8080
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: chat-gemini
+                  key: api-key
+                  optional: true
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
