@@ -5,6 +5,7 @@ namespace: notification
 
 resources:
   - deployment.yaml
+  - service.yaml
 
 # build.sh in aldiCovo/AldiApps writes newTag, the commit the image was built from.
 images:

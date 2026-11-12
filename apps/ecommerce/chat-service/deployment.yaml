@@ -64,6 +64,16 @@ spec:
                   name: chat-anthropic
                   key: api-key
                   optional: true
+            # Emails to customers whose admin answer stays unread, through notification-service;
+            # off without the token.
+            - name: NOTIFY_URL
+              value: http://notification-service.notification.svc:8080
+            - name: NOTIFY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: chat-notify-token
+                  key: token
+                  optional: true
             # Telegram notes to the admins when a chat needs a person; none without these.
             - name: TELEGRAM_BOT_TOKEN
               valueFrom:

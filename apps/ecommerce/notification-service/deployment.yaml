@@ -1,4 +1,4 @@
-# No Service: nothing calls this. It only reads events and sends email.
+# Reads order events and sends email; chat-service also asks it for chat emails.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -47,6 +47,14 @@ spec:
               value: mailpit.mailpit.svc:1025
             - name: MAIL_FROM
               value: Prastika <no-reply@prastika.aldiab.ai.id>
+            # chat-service's token for emails about unread chat answers; the route is off
+            # without it. The same value is in chat-notify-token in namespace chat.
+            - name: CHAT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: notification-chat-token
+                  key: token
+                  optional: true
           readinessProbe:
             httpGet:
               path: /readyz
