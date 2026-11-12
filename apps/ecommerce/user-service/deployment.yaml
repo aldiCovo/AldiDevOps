@@ -69,6 +69,24 @@ spec:
             # The start of each reset link.
             - name: SHOP_URL
               value: https://prastika.aldiab.ai.id
+            # Google login. The secret is required, so a rollout without it stays on the old Pod
+            # instead of starting one that refuses to run. Create it first:
+            # kubectl -n user create secret generic user-google --from-literal=client-secret=GOCSPX-...
+            - name: GOOGLE_CLIENT_ID
+              value: 441375500995-bpmf4697vnjgdk11mam5ubkbvcbpf86u.apps.googleusercontent.com
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: user-google
+                  key: client-secret
+            # WhatsApp codes through Fonnte; without the secret phones just can't be verified.
+            # kubectl -n user create secret generic user-fonnte --from-literal=token=...
+            - name: FONNTE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: user-fonnte
+                  key: token
+                  optional: true
             # Password hashes make a lot of garbage, so Go must collect it before the limit below.
             - name: GOMEMLIMIT
               value: 200MiB

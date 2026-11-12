@@ -40,6 +40,11 @@ spec:
               value: http://chat-service.chat.svc:8080
             - name: PHOTOS_DIR
               value: /photos
+            # Google login; the callback registered in Google Cloud is SHOP_URL/api/auth/google/callback.
+            - name: GOOGLE_CLIENT_ID
+              value: 441375500995-bpmf4697vnjgdk11mam5ubkbvcbpf86u.apps.googleusercontent.com
+            - name: SHOP_URL
+              value: https://prastika.aldiab.ai.id
           volumeMounts:
             - name: photos
               mountPath: /photos
