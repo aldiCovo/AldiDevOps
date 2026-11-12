@@ -62,7 +62,7 @@ spec:
                   name: mail-brevo
                   key: password
             - name: MAIL_FROM
-              value: Prastika Fashion <no-reply@aldiab.ai.id>
+              value: Prastika Fashion <no-reply-prastikafashion@aldiab.ai.id>
             # Customers' replies reach the shop mailbox, which Cloudflare forwards.
             - name: MAIL_REPLY_TO
               value: Prastika Fashion <prastikafashion@aldiab.ai.id>
