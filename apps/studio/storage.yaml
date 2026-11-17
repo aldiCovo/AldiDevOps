@@ -1,0 +1,35 @@
+# kubeadm has no storage provisioner, so this claim binds to a folder on AldiServer's disk. It
+# holds everything the Studio must keep across restarts and new images: the videos and their
+# scripts, code and Claude sessions (jobs), the narration the worker downloads (public-jobs),
+# optional background music, Claude Code's home (for --resume) and the writable .env.
+# Retain keeps the folder if the claim is ever deleted.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: studio-data
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  claimRef:
+    namespace: studio
+    name: studio-data
+  hostPath:
+    path: /var/lib/aldi/studio-video
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: studio-data
+  namespace: studio
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  volumeName: studio-data
+  resources:
+    requests:
+      storage: 20Gi

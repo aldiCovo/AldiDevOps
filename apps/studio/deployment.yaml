@@ -1,0 +1,101 @@
+# Studio Video: idea -> AI storyboard -> narration -> AI-written Remotion code -> type check.
+# Rendering is not done here: with RENDER_MODE=remote the server only queues it, and the worker on
+# the Windows laptop polls /api/worker/next, renders, and uploads the MP4 back in 8 MB pieces.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: studio
+  labels:
+    app: studio
+spec:
+  # The queue and the running task live in the process's memory, so there is exactly one,
+  # and the old Pod stops before the new one starts.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: studio
+  template:
+    metadata:
+      labels:
+        app: studio
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      # hostPath ignores fsGroup, so the folders are made and handed to uid 1000 (node) here.
+      initContainers:
+        - name: prepare-data
+          image: busybox:1.37.0
+          securityContext:
+            runAsUser: 0
+          command:
+            - sh
+            - -c
+            - mkdir -p /data/jobs /data/public-jobs /data/music /data/home /data/config && touch /data/config/.env && chown -R 1000:1000 /data
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      containers:
+        - name: studio
+          image: ghcr.io/aldicovo/studio-video
+          ports:
+            - containerPort: 4321
+          env:
+            # STUDIO_HOST=0.0.0.0, STUDIO_PORT=4321, RENDER_MODE=remote and HOME=/data/home are
+            # set in the image. dotenv never overrides these, so they win over .env. Tokens the
+            # app rotates (TIKTOK_REFRESH_TOKEN, YOUTUBE_REFRESH_TOKEN, ...) belong only in .env.
+            - name: TTS_RATE
+              value: "+10%"
+            - name: DISABLE_AUTOUPDATER
+              value: "1"
+            # The worker sends it as "Authorization: Bearer ..."; the same value goes in the
+            # laptop's .env.
+            - name: WORKER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: studio-worker
+                  key: token
+            # From `claude setup-token` (Claude Pro). With no ANTHROPIC_API_KEY the app runs
+            # `claude -p`, which logs in with this.
+            - name: CLAUDE_CODE_OAUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: studio-claude
+                  key: token
+          # No liveness probe: a restart would drop the queue and any video in progress.
+          readinessProbe:
+            httpGet:
+              path: /api/status
+              port: 4321
+            periodSeconds: 10
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            # tsc on the generated code and the Claude Code CLI are the heavy parts.
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: data
+              subPath: jobs
+              mountPath: /app/jobs
+            - name: data
+              subPath: public-jobs
+              mountPath: /app/public/jobs
+            - name: data
+              subPath: music
+              mountPath: /app/public/music
+            - name: data
+              subPath: home
+              mountPath: /data/home
+            # /app/.env is a link to /data/config/.env, so the app can rewrite it.
+            - name: data
+              subPath: config
+              mountPath: /data/config
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: studio-data

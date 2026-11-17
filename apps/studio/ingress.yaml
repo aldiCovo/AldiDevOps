@@ -1,0 +1,21 @@
+# The Studio has no login of its own. Cloudflare Access sits in front of the whole host, with a
+# Bypass application for /api/worker, which the app guards itself with WORKER_TOKEN (see README).
+# Traefik needs no middleware here: it sets no body-size limit, waits for the backend without a
+# timeout, and passes /api/events (SSE) through unbuffered.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: studio
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: studio.aldiab.ai.id
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: studio
+                port:
+                  number: 80
