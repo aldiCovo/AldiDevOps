@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/aldiCovo/AldiDevOps.git
     targetRevision: main
-    path: apps/studio
+    path: apps/studio-video
   destination:
     server: https://kubernetes.default.svc
     namespace: studio
