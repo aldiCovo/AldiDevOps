@@ -21,6 +21,9 @@ spec:
       labels:
         app: studio
     spec:
+      # The Service is named studio, so Kubernetes would inject STUDIO_PORT=tcp://<ip>:80,
+      # which overrides the image's STUDIO_PORT=4321 and makes the app listen on NaN.
+      enableServiceLinks: false
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000

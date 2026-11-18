@@ -56,7 +56,7 @@ WORKER_NAME=laptop-windows
 YouTube, TikTok, Instagram and Facebook keys go in `.env` (see `.env.example` in the code), not in the Deployment, because the app rewrites `.env` when TikTok rotates its refresh token. The app reads `.env` only when it starts.
 
 ```sh
-sudo vi /var/lib/aldi/studio-video/config/.env
+vi /var/lib/aldi/studio-video/config/.env   # aldiab owns it, no sudo
 kubectl -n studio rollout restart deployment studio
 ```
 
