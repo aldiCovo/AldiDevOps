@@ -17,4 +17,4 @@ configMapGenerator:
 # build.sh in aldiCovo/AldiApps writes newTag, the commit the image was built from.
 images:
   - name: ghcr.io/aldicovo/cvaldi
-    newTag: "5e4f8e7"
+    newTag: "013dc4b"
