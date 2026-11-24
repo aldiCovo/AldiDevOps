@@ -26,6 +26,10 @@ kubectl -n studio create secret generic studio-worker \
 # Claude Pro: run `claude setup-token` on a computer logged in to Claude, then paste the token here.
 read -s T && kubectl -n studio create secret generic studio-claude --from-literal=token="$T" && unset T
 
+# Signs the login cookie. Made up once; nobody needs to read it.
+kubectl -n studio create secret generic studio-session \
+  --from-literal=secret="$(openssl rand -hex 32)"
+
 kubectl apply -f k8s/argocd/studio-application.yaml
 ```
 

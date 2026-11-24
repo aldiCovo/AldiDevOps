@@ -67,10 +67,21 @@ spec:
                 secretKeyRef:
                   name: studio-claude
                   key: token
+            # Signs the login cookie. Made by hand with `read -s` (see README). Optional so the pod
+            # still starts without it, but then every restart logs everyone out.
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: studio-session
+                  key: secret
+                  optional: true
+            # Cloudflare Access team, used to verify the owner's Access login (Cf-Access-Jwt-Assertion).
+            - name: CF_ACCESS_TEAM
+              value: proud-flower-0355
           # No liveness probe: a restart would drop the queue and any video in progress.
           readinessProbe:
             httpGet:
-              path: /api/status
+              path: /healthz
               port: 4321
             periodSeconds: 10
             timeoutSeconds: 3
